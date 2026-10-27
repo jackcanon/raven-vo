@@ -20,8 +20,8 @@ jobs:
       - name: Build app
         run: ./build.sh
       - name: Package development artifact
-        run: ditto -c -k --keepParent 'dist/Ming Voiceovers.app' dist/Ming-Voiceovers-development-arm64.zip
+        run: ditto -c -k --keepParent 'dist/Raven VO.app' dist/Raven-VO-development-arm64.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: Ming-Voiceovers-development-arm64
-          path: dist/Ming-Voiceovers-development-arm64.zip
+          name: Raven-VO-development-arm64
+          path: dist/Raven-VO-development-arm64.zip

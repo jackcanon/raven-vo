@@ -5,11 +5,11 @@ output="${APP_OUTPUT_DIR:-$repo/dist}"
 engine="${ENGINE_BINARY:-$repo/.build/audio.cpp/build/macos-portable-release/bin/audiocpp_cli}"
 engine_source="${ENGINE_SOURCE:-$repo/.build/audio.cpp}"
 if [[ ! -x "$engine" ]]; then echo 'Build the engine first with scripts/build-engine.sh.' >&2; exit 1; fi
-app="$output/Ming Voiceovers.app"
+app="$output/Raven VO.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/Engine" "$repo/.build/tmp" "$repo/.build/swift-cache"
 export TMPDIR="$repo/.build/tmp"
 export CLANG_MODULE_CACHE_PATH="$repo/.build/swift-cache"
-xcrun swiftc -parse-as-library -swift-version 6 -O -target arm64-apple-macosx14.0 "$repo"/Sources/*.swift -o "$app/Contents/MacOS/MingVoiceovers"
+xcrun swiftc -parse-as-library -swift-version 6 -O -target arm64-apple-macosx14.0 "$repo"/Sources/*.swift -o "$app/Contents/MacOS/RavenVO"
 cp "$engine" "$app/Contents/Resources/Engine/audiocpp_cli"
 cp "$repo/Assets/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 mkdir -p "$app/Contents/Resources/ThirdParty/Ming" "$app/Contents/Resources/ThirdParty/FrontEnd"
@@ -20,7 +20,7 @@ python3 - "$app" "$engine_source" <<'PY'
 import plistlib,sys,shutil
 from pathlib import Path
 app,engine=map(Path,sys.argv[1:])
-(app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIconFile':'AppIcon','CFBundleExecutable':'MingVoiceovers','CFBundleIdentifier':'app.happyjack.mingvoiceovers','CFBundleName':'Ming Voiceovers','CFBundleDisplayName':'Ming Voiceovers','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.3.0','CFBundleVersion':'3','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True,'NSPrincipalClass':'NSApplication'}))
+(app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIconFile':'AppIcon','CFBundleExecutable':'RavenVO','CFBundleIdentifier':'app.happyjack.mingvoiceovers','CFBundleName':'Raven VO','CFBundleDisplayName':'Raven VO','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.3.0','CFBundleVersion':'3','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True,'NSPrincipalClass':'NSApplication'}))
 root=app/'Contents/Resources/ThirdParty'
 for directory in [engine,engine/'external']:
     for path in (directory.glob('*') if directory==engine else directory.rglob('*')):

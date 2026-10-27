@@ -1,17 +1,23 @@
 import SwiftUI
 import AppKit
 
-@main struct MingVoiceoversApp: App {
+@main struct RavenVOApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @State private var model = StudioModel()
     var body: some Scene {
-        Window("Ming Voiceovers", id: "studio") {
+        Window("Raven VO", id: "studio") {
             ContentView(model: model)
                 .onAppear { delegate.model = model; delegate.capturePreviewIfRequested() }
         }
         .defaultSize(width: 1100, height: 800)
         .commands {
             CommandGroup(replacing: .newItem) { }
+            CommandGroup(after: .appInfo) {
+                Link("Raven VO Website", destination: URL(string: "https://www.ravenvo.app")!)
+                Button("Licenses and credits…") {
+                    if let url = Bundle.main.resourceURL?.appendingPathComponent("ThirdParty/README.md") { NSWorkspace.shared.open(url) }
+                }
+            }
             CommandGroup(after: .saveItem) {
                 Button("Save Script") { model.saveDraft() }.keyboardShortcut("s")
             }

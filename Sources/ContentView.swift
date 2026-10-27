@@ -61,11 +61,11 @@ struct ContentView: View {
             }
             .padding(26)
             .frame(minWidth: 690, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .navigationTitle("Ming Voiceovers")
+            .navigationTitle("Raven VO")
         }
         .navigationSplitViewStyle(.balanced)
         .frame(minWidth: 990, minHeight: 690)
-        .tint(.teal)
+        .tint(RavenBrand.recordRed)
         .onChange(of: model.draft) { model.scheduleSave() }
         .task {
             while !Task.isCancelled {
@@ -80,10 +80,11 @@ private struct HeaderView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: "waveform.circle.fill").font(.system(size: 34)).foregroundStyle(.teal)
+                Image(nsImage: NSImage(contentsOf: Bundle.main.url(forResource: "AppIcon", withExtension: "icns") ?? URL(fileURLWithPath: "/")) ?? NSImage())
+                    .resizable().scaledToFit().frame(width: 46, height: 46).accessibilityLabel("Raven VO")
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("A voice for your story.").font(.title2.bold())
-                    Text("Write, generate, and listen. Everything runs on this Mac.").foregroundStyle(.secondary)
+                    Text("Raven VO").font(.title2.bold())
+                    Text("A voice for your story. Created on your Mac.").foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -185,7 +186,7 @@ private struct GenerationBar: View {
                 Spacer()
                 Button { model.generate() } label: {
                     Label("Generate voice-over", systemImage: "waveform.badge.plus")
-                }.buttonStyle(.borderedProminent).controlSize(.large)
+                }.buttonStyle(.borderedProminent).tint(RavenBrand.headphoneAmber).foregroundStyle(.black).controlSize(.large)
                     .keyboardShortcut(.return, modifiers: [.command])
                     .disabled(!model.canGenerate).accessibilityIdentifier("generate-voiceover")
             }
@@ -205,7 +206,7 @@ private struct PlaybackView: View {
             }
             HStack(spacing: 14) {
                 Button { model.playPause() } label: { Image(systemName: model.isPlaying ? "pause.circle.fill" : "play.circle.fill").font(.system(size: 32)) }
-                    .buttonStyle(.plain).foregroundStyle(.teal)
+                    .buttonStyle(.plain).foregroundStyle(RavenBrand.previewGreen)
                     .accessibilityLabel(model.isPlaying ? "Pause take" : "Play take")
                     .disabled(model.duration == 0)
                 Text(clock(model.position)).monospacedDigit().font(.caption).frame(width: 38)

@@ -1,10 +1,12 @@
-# Ming Voiceovers
+# Raven VO
+
+Part of the RavenMix and RavenAudio family. Product website: [www.ravenvo.app](https://www.ravenvo.app).
 
 A small native SwiftUI voice-over studio for Apple Silicon Macs. Write a script, choose a voice, generate locally, and export a WAV for your editing software.
 
 ## Install
 
-Download the macOS arm64 ZIP from [Releases](https://github.com/jackcanon/ming-voiceovers/releases), unzip it, and drag **Ming Voiceovers.app** into Applications.
+Download the macOS arm64 ZIP from [Releases](https://github.com/jackcanon/raven-vo/releases), unzip it, and drag **Raven VO.app** into Applications.
 
 On first launch:
 
@@ -22,7 +24,7 @@ Generation works offline after the model is installed. There are no accounts, su
 - At least 5 GB available disk space for the model and working files, plus room for recordings.
 - 8 GB or more unified memory recommended; actual resource needs increase with script length.
 
-The app checks that the chosen storage volume is mounted. It never silently switches model or recording storage to another volume. On the original development machine, it recognizes the existing `/Volumes/10TB JBOD/Work/Ming-Voiceovers` installation without moving it.
+The app checks that the chosen storage volume is mounted. It never silently switches model or recording storage to another volume. On the original development machine, it recognizes the existing `/Volumes/10TB JBOD/Work/Raven-VO` installation without moving it.
 
 ## Languages and voices
 
@@ -63,7 +65,7 @@ Install Xcode (with its Metal compiler), CMake, and Git. No Python model runtime
 scripts/build-engine.sh
 scripts/test.sh
 ./build.sh
-open 'dist/Ming Voiceovers.app'
+open 'dist/Raven VO.app'
 ```
 
 The engine source and submodules are fetched at a pinned commit into `.build/`. Only `ming3_tts` is linked. The arm64 engine embeds its model specifications and Metal library and disables host-specific CPU optimizations. Build caches and outputs remain under this repository.
