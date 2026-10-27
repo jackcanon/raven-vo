@@ -10,7 +10,7 @@ On first launch:
 
 1. Choose a folder for the model, saved scripts, and recordings. External drives are supported.
 2. Click **Download model**. The approximately 3 GB full-precision Ming 0.5B model downloads directly into your selected folder. The app supports resuming interrupted transfers and verifies its pinned SHA-256 checksum before installing it.
-3. Choose James, Emma, George, Charlotte, or **Design a voice**. Paste your script and click **Generate voice-over** (Command-Return).
+3. Choose American James, American Emma, British George, British Charlotte, or **Documentary VO**. Paste your script and click **Generate voice-over** (Command-Return).
 4. Select a take to play it, load its script, reveal it in Finder, or export its WAV.
 
 Generation works offline after the model is installed. There are no accounts, subscription, API keys, or cloud generation requests. The model downloader contacts Hugging Face and its content-delivery hosts. Scripts are passed only to the bundled local engine.
@@ -26,9 +26,9 @@ The app checks that the chosen storage volume is mounted. It never silently swit
 
 ## Voices and controls
 
-- **James / Emma:** American English presets.
-- **George / Charlotte:** British English presets.
-- **Design a voice:** describe tone, approximate age, accent, mood, and pacing. Designed voices may vary between takes.
+- **American James / American Emma:** American English presets.
+- **British George / British Charlotte:** British English presets.
+- **Documentary VO:** describe tone, approximate age, accent, mood, and pacing. Designed voices may vary between takes.
 - Long scripts use the engine's automatic text chunking. The UI limits each take to 20,000 characters.
 - Output: original mono 44.1 kHz WAV; no automatic EQ, compression, or loudness processing.
 - Cancellation retains the script; unfinished audio stays in the runs folder rather than appearing as a finished take.

@@ -114,7 +114,7 @@ private struct VoiceSettings: View {
             } else {
                 Label("Consistent preset voice", systemImage: "person.wave.2")
                     .font(.caption).foregroundStyle(.secondary)
-                Text("For a particular mood or delivery, choose Design a voice.")
+                Text("For a particular mood or delivery, choose Documentary VO.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Divider()

@@ -8,11 +8,11 @@ struct Voice: Identifiable, Hashable {
     let name: String
     let detail: String
     static let all: [Voice] = [
-        .init(id: "US_James", name: "James", detail: "American · male"),
-        .init(id: "US_Emma", name: "Emma", detail: "American · female"),
-        .init(id: "UK_George", name: "George", detail: "British · male"),
-        .init(id: "UK_Charlotte", name: "Charlotte", detail: "British · female"),
-        .init(id: "designed", name: "Design a voice", detail: "Describe the voice and delivery")
+        .init(id: "US_James", name: "American James", detail: "American · male"),
+        .init(id: "US_Emma", name: "American Emma", detail: "American · female"),
+        .init(id: "UK_George", name: "British George", detail: "British · male"),
+        .init(id: "UK_Charlotte", name: "British Charlotte", detail: "British · female"),
+        .init(id: "designed", name: "Documentary VO", detail: "Describe the voice and delivery")
     ]
 }
 struct Draft: Codable, Equatable {
