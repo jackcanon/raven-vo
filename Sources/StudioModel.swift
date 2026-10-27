@@ -12,7 +12,7 @@ struct Voice: Identifiable, Hashable {
         .init(id: "US_Emma", name: "American Emma", detail: "American · female"),
         .init(id: "UK_George", name: "British George", detail: "British · male"),
         .init(id: "UK_Charlotte", name: "British Charlotte", detail: "British · female"),
-        .init(id: "designed", name: "Documentary VO", detail: "Describe the voice and delivery")
+        .init(id: "designed", name: "Voice Design", detail: "Describe the voice and delivery")
     ]
     static let natural = Voice(id: "natural", name: "Natural voice", detail: "Automatic voice for the selected language; each take may vary.")
     static var all: [Voice] { english + chinese + [natural] }

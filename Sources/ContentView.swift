@@ -125,7 +125,7 @@ private struct VoiceSettings: View {
             } else {
                 Label(model.draft.voice == "natural" ? "Automatic voice" : "Named preset voice", systemImage: "person.wave.2")
                     .font(.caption).foregroundStyle(.secondary)
-                Text("For a particular mood or delivery, choose Documentary VO.")
+                Text("For a particular mood or delivery, choose Voice Design.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Text("Write your script in the selected language. Text is spoken as written, without translation.").font(.caption).foregroundStyle(.secondary)

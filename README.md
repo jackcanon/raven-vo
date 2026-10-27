@@ -10,7 +10,7 @@ On first launch:
 
 1. Choose a folder for the model, saved scripts, and recordings. External drives are supported.
 2. Click **Download model**. The approximately 3 GB full-precision Ming 0.5B model downloads directly into your selected folder. The app supports resuming interrupted transfers and verifies its pinned SHA-256 checksum before installing it.
-3. Select a language, then choose a voice. English offers American James, American Emma, British George, British Charlotte, or **Documentary VO**. Paste your script and click **Generate voice-over** (Command-Return).
+3. Select a language, then choose a voice. English offers American James, American Emma, British George, British Charlotte, or **Voice Design**. Paste your script and click **Generate voice-over** (Command-Return).
 4. Select a take to play it, load its script, reveal it in Finder, or export its WAV.
 
 Generation works offline after the model is installed. There are no accounts, subscription, API keys, or cloud generation requests. The model downloader contacts Hugging Face and its content-delivery hosts. Scripts are passed only to the bundled local engine.
@@ -28,7 +28,7 @@ The app checks that the chosen storage volume is mounted. It never silently swit
 
 Choose English, Chinese, Japanese, Korean, German, French, or Spanish. Write the script in that language; the app does not translate text.
 
-The voice picker follows the selected language. English shows the four named presets and Documentary VO. Chinese shows the upstream named catalogue, including emotion-specific variants, plus Natural voice and Documentary VO; use the search field to find a name, emotion, or description. Japanese, Korean, German, French, and Spanish offer Natural voice and Documentary VO because the model does not document dedicated named presets for those languages. Natural and designed voices may vary between takes.
+The voice picker follows the selected language. English shows the four named presets and Voice Design. Chinese shows the upstream named catalogue, including emotion-specific variants, plus Natural voice and Voice Design; use the search field to find a name, emotion, or description. Japanese, Korean, German, French, and Spanish offer Natural voice and Voice Design because the model does not document dedicated named presets for those languages. Natural and designed voices may vary between takes.
 
 Language is saved with drafts and takes. Existing drafts and takes default to English. Changing language resets an incompatible voice choice. The Chinese catalogue follows the [official control reference](https://github.com/inclusionAI/Ming-3.0-tts/blob/main/cookbooks/instruction_en.md); voice quality and pronunciation should be auditioned for your production.
 
@@ -36,7 +36,7 @@ Language is saved with drafts and takes. Existing drafts and takes default to En
 
 - **American James / American Emma:** American English presets.
 - **British George / British Charlotte:** British English presets.
-- **Documentary VO:** describe tone, approximate age, accent, mood, and pacing. Designed voices may vary between takes.
+- **Voice Design:** describe tone, approximate age, accent, mood, and pacing. Designed voices may vary between takes.
 - Long scripts use the engine's automatic text chunking. The UI limits each take to 20,000 characters.
 - Output: original mono 44.1 kHz WAV; no automatic EQ, compression, or loudness processing.
 - Cancellation retains the script; unfinished audio stays in the runs folder rather than appearing as a finished take.
