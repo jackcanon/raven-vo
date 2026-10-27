@@ -15,3 +15,5 @@ Original projects:
 - https://github.com/0xShug0/audio.cpp
 - https://github.com/inclusionAI/Ming-3.0-tts
 - https://huggingface.co/audio-cpp/Ming-3.0-TTS-0.5B-GGUF
+
+The full Ming MIT notice and model attribution are bundled under `ThirdParty/Ming`, including attribution for the adapted voice catalogue. The front-end MIT notice is bundled under `ThirdParty/FrontEnd`. The model and conversion repositories mark the model as MIT; preserve these notices if redistributing the app or weights. This is an independent app, not an official or endorsed Inclusion AI product. Open-weight availability alone does not grant distribution rights; the specific licences govern.

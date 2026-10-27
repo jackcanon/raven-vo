@@ -12,6 +12,10 @@ export CLANG_MODULE_CACHE_PATH="$repo/.build/swift-cache"
 xcrun swiftc -parse-as-library -swift-version 6 -O -target arm64-apple-macosx14.0 "$repo"/Sources/*.swift -o "$app/Contents/MacOS/MingVoiceovers"
 cp "$engine" "$app/Contents/Resources/Engine/audiocpp_cli"
 cp "$repo/Assets/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
+mkdir -p "$app/Contents/Resources/ThirdParty/Ming" "$app/Contents/Resources/ThirdParty/FrontEnd"
+cp "$repo/Notices/"* "$app/Contents/Resources/ThirdParty/Ming/"
+cp "$repo/LICENSE" "$app/Contents/Resources/ThirdParty/FrontEnd/LICENSE"
+cp "$repo/THIRD_PARTY.md" "$app/Contents/Resources/ThirdParty/README.md"
 python3 - "$app" "$engine_source" <<'PY'
 import plistlib,sys,shutil
 from pathlib import Path
