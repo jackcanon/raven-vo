@@ -1,0 +1,27 @@
+name: Build and test macOS app
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode and show toolchain
+        run: xcrun swift --version
+      - name: Build Metal engine
+        run: scripts/build-engine.sh
+      - name: Test model download integrity and resume
+        run: scripts/test.sh
+      - name: Build app
+        run: ./build.sh
+      - name: Package development artifact
+        run: ditto -c -k --keepParent 'dist/Ming Voiceovers.app' dist/Ming-Voiceovers-development-arm64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ming-Voiceovers-development-arm64
+          path: dist/Ming-Voiceovers-development-arm64.zip
