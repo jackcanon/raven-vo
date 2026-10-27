@@ -16,7 +16,7 @@ python3 - "$app" "$engine_source" <<'PY'
 import plistlib,sys,shutil
 from pathlib import Path
 app,engine=map(Path,sys.argv[1:])
-(app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIconFile':'AppIcon','CFBundleExecutable':'MingVoiceovers','CFBundleIdentifier':'app.happyjack.mingvoiceovers','CFBundleName':'Ming Voiceovers','CFBundleDisplayName':'Ming Voiceovers','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.2.0','CFBundleVersion':'2','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True,'NSPrincipalClass':'NSApplication'}))
+(app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIconFile':'AppIcon','CFBundleExecutable':'MingVoiceovers','CFBundleIdentifier':'app.happyjack.mingvoiceovers','CFBundleName':'Ming Voiceovers','CFBundleDisplayName':'Ming Voiceovers','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.3.0','CFBundleVersion':'3','LSMinimumSystemVersion':'14.0','NSHighResolutionCapable':True,'NSPrincipalClass':'NSApplication'}))
 root=app/'Contents/Resources/ThirdParty'
 for directory in [engine,engine/'external']:
     for path in (directory.glob('*') if directory==engine else directory.rglob('*')):

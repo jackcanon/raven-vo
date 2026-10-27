@@ -94,13 +94,24 @@ private struct HeaderView: View {
 }
 private struct VoiceSettings: View {
     @Bindable var model: StudioModel
+    @State private var voiceSearch = ""
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 14) {
+            Text("Language").font(.headline)
+            Picker("Language", selection: $model.selectedLanguage) {
+                ForEach(SpeechLanguage.all) { language in Text(language.name).tag(language.id) }
+            }.labelsHidden().accessibilityLabel("Language")
             Text("Voice").font(.headline)
+            if model.selectedLanguage == "zh" {
+                TextField("Find a Chinese voice…", text: $voiceSearch).textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Find a Chinese voice")
+            }
             Picker("Voice", selection: $model.draft.voice) {
-                ForEach(Voice.all) { voice in Text(voice.name).tag(voice.id) }
+                ForEach(Voice.choices(for: model.selectedLanguage).filter { model.selectedLanguage != "zh" || voiceSearch.isEmpty || $0.id == model.draft.voice || $0.name.localizedCaseInsensitiveContains(voiceSearch) || $0.detail.localizedCaseInsensitiveContains(voiceSearch) }) { voice in Text(voice.name).tag(voice.id) }
             }.labelsHidden().accessibilityLabel("Voice")
             Text(Voice.all.first(where: { $0.id == model.draft.voice })?.detail ?? "Choose a voice")
+                .lineLimit(4)
                 .font(.caption).foregroundStyle(.secondary)
             if model.draft.voice == "designed" {
                 Text("Describe the delivery").font(.subheadline.bold())
@@ -112,16 +123,17 @@ private struct VoiceSettings: View {
                 Text("Describe age, tone, accent, and pace. Each take may vary.")
                     .font(.caption).foregroundStyle(.secondary)
             } else {
-                Label("Consistent preset voice", systemImage: "person.wave.2")
+                Label(model.draft.voice == "natural" ? "Automatic voice" : "Named preset voice", systemImage: "person.wave.2")
                     .font(.caption).foregroundStyle(.secondary)
                 Text("For a particular mood or delivery, choose Documentary VO.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            Text("Write your script in the selected language. Text is spoken as written, without translation.").font(.caption).foregroundStyle(.secondary)
             Divider()
-            Text("English · WAV audio").font(.caption.bold())
+            Text("\(SpeechLanguage.all.first { $0.id == model.selectedLanguage }?.name ?? "English") · WAV audio").font(.caption.bold())
             Text("Saved to your chosen folder. Longer scripts are split into chunks automatically.")
                 .font(.caption).foregroundStyle(.secondary)
-            Spacer(minLength: 0)
+        }.frame(maxWidth: .infinity, alignment: .leading)
         }.disabled(model.isGenerating)
     }
 }
@@ -148,7 +160,7 @@ private struct ScriptEditor: View {
                 if model.draft.script.isEmpty {
                     Button("Try a sample script") {
                         model.draft.title = "Happy Jack Media"
-                        model.draft.script = "Every story deserves to be heard. At Happy Jack Media, we bring real voices and unforgettable moments to life."
+                        model.draft.script = SpeechLanguage.sample(for: model.selectedLanguage)
                     }.buttonStyle(.borderless)
                 }
             }

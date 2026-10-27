@@ -11,7 +11,7 @@ xattr -cr "$app"
 codesign --force --options runtime --timestamp --sign "$identity" "$app/Contents/Resources/Engine/audiocpp_cli"
 codesign --force --options runtime --timestamp --sign "$identity" "$app"
 codesign --verify --deep --strict --verbose "$app"
-zip="$output/Ming-Voiceovers-0.2.0-macOS-arm64.zip"
+zip="$output/Ming-Voiceovers-0.3.0-macOS-arm64.zip"
 ditto -c -k --keepParent "$app" "$zip"
 xcrun notarytool submit "$zip" --keychain-profile "$profile" --wait
 xcrun stapler staple "$app"

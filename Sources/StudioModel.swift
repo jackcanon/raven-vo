@@ -7,19 +7,28 @@ struct Voice: Identifiable, Hashable {
     let id: String
     let name: String
     let detail: String
-    static let all: [Voice] = [
+    static let english: [Voice] = [
         .init(id: "US_James", name: "American James", detail: "American · male"),
         .init(id: "US_Emma", name: "American Emma", detail: "American · female"),
         .init(id: "UK_George", name: "British George", detail: "British · male"),
         .init(id: "UK_Charlotte", name: "British Charlotte", detail: "British · female"),
         .init(id: "designed", name: "Documentary VO", detail: "Describe the voice and delivery")
     ]
+    static let natural = Voice(id: "natural", name: "Natural voice", detail: "Automatic voice for the selected language; each take may vary.")
+    static var all: [Voice] { english + chinese + [natural] }
+    static func choices(for language: String) -> [Voice] {
+        if language == "en" { return english }
+        let designed = english.first { $0.id == "designed" }!
+        return language == "zh" ? [natural, designed] + chinese : [natural, designed]
+    }
+
 }
 struct Draft: Codable, Equatable {
     var title = "My voice-over"
     var script = ""
     var voice = "US_James"
     var style = "A warm, clear documentary narrator with measured pacing and thoughtful, understated delivery."
+    var language: String? = "en"
 }
 struct TakeInfo: Codable {
     let title: String
@@ -27,6 +36,7 @@ struct TakeInfo: Codable {
     let voice: String
     let style: String
     let created: Date
+    var language: String? = "en"
 }
 struct Take: Identifiable, Hashable {
     var id: String { url.path }
@@ -69,7 +79,14 @@ struct Take: Identifiable, Hashable {
     @ObservationIgnored private var cancelled = false
     @ObservationIgnored private var started = Date()
     var selected: Take? { takes.first { $0.id == selectedID } }
-    var canGenerate: Bool { available && !isGenerating && !draft.script.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (draft.voice != "designed" || !draft.style.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
+    var selectedLanguage: String {
+        get { draft.language ?? "en" }
+        set {
+            draft.language = newValue
+            if !Voice.choices(for: newValue).contains(where: { $0.id == draft.voice }) { draft.voice = Voice.choices(for: newValue)[0].id }
+        }
+    }
+    var canGenerate: Bool { available && Voice.choices(for: selectedLanguage).contains(where: { $0.id == draft.voice }) && !isGenerating && !draft.script.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (draft.voice != "designed" || !draft.style.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
     var engine: URL {
         if let bundled = Bundle.main.resourceURL?.appendingPathComponent("Engine/audiocpp_cli"), FileManager.default.isExecutableFile(atPath: bundled.path) { return bundled }
         return Self.base.appendingPathComponent("audio.cpp/build/macos-metal-release/bin/audiocpp_cli")
@@ -137,7 +154,11 @@ struct Take: Identifiable, Hashable {
             takes = files.filter { $0.pathExtension.lowercased() == "wav" }.map { url in
                 let metadata = (try? Data(contentsOf: url.deletingPathExtension().appendingPathExtension("json"))).flatMap { try? JSONDecoder().decode(TakeInfo.self, from: $0) }
                 let date = metadata?.created ?? (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-                let label = metadata.map { info in Voice.all.first(where: { $0.id == info.voice })?.name ?? info.voice } ?? "Audition sample"
+                let label = metadata.map { info in
+                    let voice = Voice.all.first(where: { $0.id == info.voice })?.name ?? info.voice
+                    let language = SpeechLanguage.all.first { $0.id == (info.language ?? "en") }?.name ?? "English"
+                    return "\(voice) · \(language)"
+                } ?? "Audition sample"
                 return Take(url: url, title: metadata?.title ?? url.deletingPathExtension().lastPathComponent.replacingOccurrences(of: "-", with: " "), detail: label, created: date)
             }.sorted { $0.created > $1.created }
         } catch { errorMessage = "Could not read takes: \(error.localizedDescription)" }
@@ -161,8 +182,9 @@ struct Take: Identifiable, Hashable {
             let job = Process()
             job.executableURL = engine
             job.currentDirectoryURL = Self.base
-            var args = ["--family", "ming3_tts", "--task", snapshot.voice == "designed" ? "vdes" : "tts", "--backend", "metal", "--model", model.path, "--text", snapshot.script, "--request-option", "language=en", "--threads", "8", "--out", output.path, "--metrics", "--log"]
+            var args = ["--family", "ming3_tts", "--task", snapshot.voice == "designed" ? "vdes" : "tts", "--backend", "metal", "--model", model.path, "--text", snapshot.script, "--request-option", "language=\(snapshot.language ?? "en")", "--threads", "8", "--out", output.path, "--metrics", "--log"]
             if snapshot.voice == "designed" { args += ["--request-option", "instruct=\(snapshot.style)"] }
+            else if snapshot.voice == "natural" { args += ["--request-option", "template_name=multilingual"] }
             else { args += ["--request-option", "template_name=ip", "--request-option", "voice_id=\(snapshot.voice)"] }
             job.arguments = args
             var env = ProcessInfo.processInfo.environment
@@ -211,7 +233,7 @@ struct Take: Identifiable, Hashable {
             let filename = "Take-\(Date.now.formatted(.iso8601).replacingOccurrences(of: ":", with: "-"))-\(id.uuidString.prefix(6)).wav"
             let target = samples.appendingPathComponent(filename)
             try FileManager.default.moveItem(at: output, to: target)
-            let info = TakeInfo(title: snapshot.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Untitled take" : snapshot.title, script: snapshot.script, voice: snapshot.voice, style: snapshot.style, created: Date())
+            let info = TakeInfo(title: snapshot.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Untitled take" : snapshot.title, script: snapshot.script, voice: snapshot.voice, style: snapshot.style, created: Date(), language: snapshot.language)
             do { try JSONEncoder().encode(info).write(to: target.deletingPathExtension().appendingPathExtension("json"), options: .atomic) }
             catch { errorMessage = "Audio saved, but its script details could not be saved: \(error.localizedDescription)" }
             reloadTakes(); select(target.path)
@@ -249,7 +271,7 @@ struct Take: Identifiable, Hashable {
     func stopPlayback() { playerTask?.cancel(); playerTask = nil; player?.stop(); isPlaying = false }
     func restoreSelectedScript() {
         guard let take = selected, let data = try? Data(contentsOf: take.url.deletingPathExtension().appendingPathExtension("json")), let info = try? JSONDecoder().decode(TakeInfo.self, from: data) else { errorMessage = "This audition sample has no saved script. New takes include their script and voice settings."; return }
-        draft = Draft(title: info.title, script: info.script, voice: info.voice, style: info.style)
+        draft = Draft(title: info.title, script: info.script, voice: info.voice, style: info.style, language: info.language ?? "en")
         scheduleSave()
     }
     func exportSelected() {
