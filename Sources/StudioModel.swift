@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import Observation
+import Darwin
 
 struct Voice: Identifiable, Hashable {
     let id: String
@@ -40,7 +41,10 @@ struct Take: Identifiable, Hashable {
     let installer = ModelInstaller()
     var storageChosen: Bool { StoragePreference.record != nil }
     var storageLabel: String { StoragePreference.folder?.path ?? "Choose where to store the model and recordings" }
-    var modelPresent: Bool { (((try? FileManager.default.attributesOfItem(atPath: model.path)[.size]) as? NSNumber)?.int64Value ?? 0) == ModelArtifact.ming.size }
+    var modelPresent: Bool {
+        var info = stat()
+        return model.path.withCString { fstatat(AT_FDCWD, $0, &info, 0) } == 0 && info.st_size == ModelArtifact.ming.size
+    }
     var draft = Draft()
     var takes: [Take] = []
     var selectedID: String?
