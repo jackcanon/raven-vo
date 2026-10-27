@@ -2,7 +2,7 @@
 
 Part of the RavenMix and RavenAudio family. Product website: [www.ravenvo.app](https://www.ravenvo.app).
 
-A small native SwiftUI voice-over studio for Apple Silicon Macs. Write a script, choose a voice, generate locally, and export a WAV for your editing software.
+Raven VO is a native voice-over studio for Apple Silicon Macs, currently powered by Ming 0.5B. Write a script, choose a voice, generate locally, and export a WAV for your editing software.
 
 ## Install
 
