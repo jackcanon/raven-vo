@@ -129,7 +129,7 @@ struct Take: Identifiable, Hashable {
         guard FileManager.default.isExecutableFile(atPath: engine.path) else { available = false; availabilityMessage = "The bundled engine is missing. Reinstall the application."; return }
         guard modelPresent else { available = false; availabilityMessage = "Download the Ming 0.5B model to start generating."; return }
         available = true
-        availabilityMessage = "Ming 0.5B · Apple GPU · Local generation"
+        availabilityMessage = "Powered by Ming 0.5B · Apple GPU · Local generation"
     }
     func scheduleSave() {
         saveTask?.cancel()

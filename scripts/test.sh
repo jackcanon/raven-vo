@@ -12,3 +12,6 @@ xcrun swiftc -parse-as-library -swift-version 6 -O "$repo/Sources/StudioModel.sw
 
 xcrun swiftc -parse-as-library -swift-version 6 -O "$repo/Sources/StudioModel.swift" "$repo/Sources/Storage.swift" "$repo/Sources/ModelInstaller.swift" "$repo/Sources/ChineseVoices.swift" "$repo/Sources/SpeechLanguage.swift" "$repo/Tests/LanguageChecks.swift" -o "$repo/.build/language-checks"
 "$repo/.build/language-checks"
+
+xcrun swiftc -parse-as-library -swift-version 6 -O "$repo/Sources/RavenBrand.swift" "$repo/Tests/ContrastChecks.swift" -o "$repo/.build/contrast-checks"
+"$repo/.build/contrast-checks"

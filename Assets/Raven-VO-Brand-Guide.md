@@ -27,3 +27,7 @@ Generated raster colors may vary slightly; these are the exact UI tokens. Keep l
 ## Assets and scope
 
 AppIcon.png is the current raster master. AppIcon.icns contains standard macOS sizes. This is an independent product identity; Ming remains credited as the underlying model. Website hosting and DNS configuration are separate from the app's website link. No trademark-clearance claim is made by this visual guide.
+
+## Accessible application controls
+
+Use native semantic colours for ordinary controls, not brand-red labels. Supporting text uses opaque dark/light neutral values. The active primary action uses black lettering on amber; disabled actions use a neutral state. Red is retained in artwork and does not need to tint the app. See ACCESSIBILITY-AUDIT.md for measured contrast, tested scope, and remaining acceptance work.
