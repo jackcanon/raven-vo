@@ -17,7 +17,7 @@ from PySide6.QtGui import QColor, QDesktopServices, QIcon, QPainter, QPalette, Q
 from PySide6.QtMultimedia import QAudio, QAudioFormat, QAudioOutput, QAudioSource, QMediaDevices, QMediaPlayer
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QGroupBox,
     QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMessageBox,
-    QPlainTextEdit, QProgressBar, QPushButton, QScrollArea, QSlider, QSplitter, QVBoxLayout, QWidget)
+    QPlainTextEdit, QProgressBar, QPushButton, QScrollArea, QSizePolicy, QSlider, QSplitter, QVBoxLayout, QWidget)
 
 from . import __version__
 from .audio import envelope, prepare_sample
@@ -173,6 +173,7 @@ class Window(QMainWindow):
         self.takes.setAccessibleName("Your takes")
         self.takes.currentItemChanged.connect(self.take_selected)
         sidebar = QWidget()
+        sidebar.setMinimumWidth(120)
         left = QVBoxLayout(sidebar)
         left.addWidget(QLabel("Your takes"))
         left.addWidget(self.takes)
@@ -191,6 +192,8 @@ class Window(QMainWindow):
         storage = QHBoxLayout()
         self.storage_label = QLabel("Choose where to store your model, takes and voice samples.")
         self.storage_label.setWordWrap(True)
+        self.storage_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.storage_label.setMinimumWidth(0)
         storage.addWidget(self.storage_label, 1)
         self.choose = button("Choose storage…", self.choose_storage)
         storage.addWidget(self.choose)

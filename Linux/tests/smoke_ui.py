@@ -75,7 +75,7 @@ with tempfile.TemporaryDirectory(dir=root) as temp:
     for width, height in [(1506, 826), (1366, 768), (1024, 640), (800, 600)]:
         window.resize(width, height)
         app.processEvents()
-        assert window.width() <= width and window.height() <= height
+        assert window.width() <= width and window.height() <= height, (width, height, window.size(), window.minimumSizeHint())
         window.form_scroll.verticalScrollBar().setValue(window.form_scroll.verticalScrollBar().maximum())
         app.processEvents()
         for control in (window.generate, window.cancel, window.status, window.play, window.position):
