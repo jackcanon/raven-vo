@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   stage:
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository
+    if: (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'timed_out') && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: Raven-VO-Linux-preview-amd64
+          name: ${{ github.event.workflow_run.conclusion == 'success' && 'Raven-VO-Linux-preview-amd64' || 'Raven-VO-Ubuntu-validated-amd64' }}
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
           path: linux-packages
@@ -25,9 +25,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
           set -euo pipefail
           (cd linux-packages && sha256sum -c SHA256SUMS)
+          cp LINUX-PREVIEW.md .linux-preview-notes.md
+          if [[ "$RUN_CONCLUSION" != success ]]; then
+            python3 - <<'PYNOTES'
+          from pathlib import Path
+          p = Path('.linux-preview-notes.md')
+          text = p.read_text()
+          text = text.replace('Ubuntu 24.04 or later and Debian 13 or later', 'Ubuntu 24.04 or later (Debian 13 compatibility is not yet confirmed)')
+          text = text.replace('the installer is also tested in a clean Debian 13 container.', 'the Debian 13 container check did not complete successfully, so Debian compatibility is not claimed.')
+          p.write_text(text)
+          PYNOTES
+          fi
           tag=v0.5.0-linux-preview.1
           if gh release view "$tag" --json isDraft --jq .isDraft > .build-release-state 2>/dev/null; then
             if [[ "$(cat .build-release-state)" != true ]]; then
@@ -35,8 +47,8 @@ jobs:
               exit 1
             fi
             gh release upload "$tag" linux-packages/*.deb linux-packages/*.tar.gz linux-packages/SHA256SUMS --clobber
-            gh release edit "$tag" --draft --prerelease --target "$SOURCE_SHA" --notes-file LINUX-PREVIEW.md
+            gh release edit "$tag" --draft --prerelease --target "$SOURCE_SHA" --notes-file .linux-preview-notes.md
           else
-            gh release create "$tag" --draft --prerelease --target "$SOURCE_SHA" --title 'Raven VO 0.5.0 — Linux preview 1' --notes-file LINUX-PREVIEW.md linux-packages/*.deb linux-packages/*.tar.gz linux-packages/SHA256SUMS
+            gh release create "$tag" --draft --prerelease --target "$SOURCE_SHA" --title 'Raven VO 0.5.0 — Linux preview 1' --notes-file .linux-preview-notes.md linux-packages/*.deb linux-packages/*.tar.gz linux-packages/SHA256SUMS
           fi
           gh release view "$tag" --json url,isDraft --jq '{url: .url, draft: .isDraft}'
