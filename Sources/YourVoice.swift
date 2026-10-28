@@ -105,6 +105,15 @@ enum VoiceSampleAudio {
     var selectedMicrophoneID = StoragePreference.preferences.string(forKey: "RavenVO.microphone.v1") ?? "" {
         didSet { StoragePreference.preferences.set(selectedMicrophoneID, forKey: "RavenVO.microphone.v1") }
     }
+    let previewWaveform = WaveformModel()
+    var previewActive = false
+    var previewTitle = ""
+    var previewPosition: Double = 0
+    var previewDuration: Double = 0
+    var previewIsPlaying = false
+    var previewVolume: Double = 1 { didSet { samplePlayer?.volume = Float(previewVolume) } }
+    @ObservationIgnored var beforePreview: (() -> Void)?
+    @ObservationIgnored private var previewTask: Task<Void, Never>?
     var inputDBFS: Double = -80
     var inputLevel: Double { max(0, min(1, (inputDBFS + 60) / 60)) }
     var microphoneStatus: String {
@@ -220,23 +229,56 @@ enum VoiceSampleAudio {
     func playMicCheck(cleaned: Bool) {
         guard let check = micCheck, let fileName = cleaned ? Optional(check.fileName) : check.rawFileName,
               let url = samples?.appendingPathComponent(fileName) else { return }
-        play(url)
+        play(url, title: cleaned ? "Microphone check · Cleaned test" : "Microphone check · Original test")
     }
     func playOriginalSample() {
         guard let name = profile?.rawFileName, let url = samples?.appendingPathComponent(name) else { return }
-        play(url)
+        play(url, title: "Your Voice · Original sample")
     }
     func playSample() {
         guard ready, let url = sampleURL else { return }
-        play(url)
+        play(url, title: profile?.cleanupApplied == true ? "Your Voice · Cleaned sample" : "Your Voice · Sample")
     }
-    private func play(_ url: URL) {
-        do { samplePlayer?.stop(); samplePlayer = try AVAudioPlayer(contentsOf: url); samplePlayer?.play() }
-        catch { self.error = "Could not play the sample: \(error.localizedDescription)" }
+    private func play(_ url: URL, title: String) {
+        beforePreview?()
+        stopPreview(clear: true)
+        do {
+            samplePlayer = try AVAudioPlayer(contentsOf: url)
+            samplePlayer?.volume = Float(previewVolume)
+            previewDuration = samplePlayer?.duration ?? 0
+            previewPosition = 0; previewTitle = title; previewActive = true
+            previewWaveform.load(url)
+            previewPlayPause()
+        } catch { self.error = "Could not play the sample: \(error.localizedDescription)" }
+    }
+    func previewPlayPause() {
+        guard let samplePlayer else { return }
+        if samplePlayer.isPlaying { samplePlayer.pause(); previewTask?.cancel(); previewTask = nil; previewIsPlaying = false; return }
+        beforePreview?()
+        if previewPosition >= previewDuration { samplePlayer.currentTime = 0; previewPosition = 0 }
+        previewIsPlaying = samplePlayer.play()
+        previewTask?.cancel()
+        previewTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled, let self, let player = self.samplePlayer else { return }
+                self.previewIsPlaying = player.isPlaying
+                self.previewPosition = player.isPlaying ? player.currentTime : (player.currentTime == 0 ? self.previewDuration : player.currentTime)
+                if !player.isPlaying { return }
+            }
+        }
+    }
+    func seekPreview(_ time: Double) {
+        guard time.isFinite else { return }
+        let clamped = min(previewDuration, max(0, time)); samplePlayer?.currentTime = clamped; previewPosition = clamped
+    }
+    func stopPreview(clear: Bool = false) {
+        previewTask?.cancel(); previewTask = nil; samplePlayer?.pause(); previewIsPlaying = false
+        if clear { samplePlayer = nil; previewActive = false; previewPosition = 0; previewDuration = 0; previewWaveform.load(nil) }
     }
     func startRecording(micCheck: Bool = false) {
         guard !busy && !isRecording && StoragePreference.mounted else { return }
-        samplePlayer?.stop()
+        stopPreview()
         busy = true; error = nil
         Task { [self] in
             defer { busy = false }

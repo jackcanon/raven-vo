@@ -34,3 +34,7 @@ Evidence is retained locally under .build: contrast-results.txt, keyboard-result
 ## 0.4.0 microphone follow-up
 
 A live test exposed a main-thread draft-write stall when enabling Your Voice. Draft and voice-settings writes now use ordered background queues; quitting flushes queued settings. A blocked-write regression verifies the UI actor remains responsive. Added a labelled microphone picker, unavailable-device state, refresh action, and recording-only input meter with a spoken numeric value and text guidance. Seven inputs were discovered locally; a missing selected device is rejected without fallback. The user confirmed selected-input recording, live meter movement, and original/cleaned playback on October 27, 2026.
+
+## Waveform transport
+
+The persistent player uses labelled native buttons for play/pause and five-second skips, with accessible sliders for position and volume. The waveform is decorative for assistive technology; the native position slider exposes the same seek action and elapsed/total value. Waveform decoding runs off the UI thread with bounded buffers, cancellation and stale-result checks. Muted synthetic-audio integration checks cover pause/resume, seek bounds, end/replay, preview/take exclusivity and waveform clearing.

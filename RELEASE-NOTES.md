@@ -2,6 +2,7 @@
 
 Raven VO is a local voice-over studio for Apple Silicon Macs, currently powered by Ming 0.5B. Part of the RavenMix and RavenAudio family. Website: https://www.ravenvo.app.
 
+- **Waveform player:** a persistent playback bar for takes and voice-sample auditions, with a waveform, moving playhead, click/drag seeking, play/pause, five-second skips, elapsed/remaining time and volume.
 - **Separate voice sections:** choose Language and Preset voice, or enable Custom Voice and describe the voice you want. Script remains the narration to speak. Custom Voice and Your Voice are separate from the preset picker and use one mode at a time.
 - **Your Voice:** record or import a 3–15 second sample for local voice cloning. Ming uses a reusable reference recording; a separate model-training job is not required. Optional sample transcripts are kept separate from the new narration.
 - **Microphone selection:** choose and remember a specific input, refresh connected devices, and check a live recording-level meter. Unavailable selections require choosing another microphone.

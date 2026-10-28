@@ -62,8 +62,6 @@ struct ContentView: View {
                         Button { model.errorMessage = nil } label: { Image(systemName: "xmark") }.buttonStyle(.plain).help("Dismiss message").accessibilityLabel("Dismiss error message")
                     }.font(.callout).padding(12).background(.orange.opacity(0.08), in: .rect(cornerRadius: 10))
                 }
-                Divider()
-                PlaybackView(model: model)
                 DisclosureGroup("Generation details", isExpanded: $showDetails) {
                     ScrollView {
                         Text(model.logTail.isEmpty ? "The engine log will appear here when you generate a take." : model.logTail)
@@ -74,6 +72,9 @@ struct ContentView: View {
             }
             .padding(26)
             .frame(minWidth: 690, maxWidth: .infinity, alignment: .topLeading)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                PlaybackView(model: model).padding(.horizontal, 26).padding(.vertical, 14).background(.bar)
             }
             .navigationTitle("Raven VO")
         }
@@ -300,30 +301,36 @@ private struct GenerationBar: View {
 }
 private struct PlaybackView: View {
     let model: StudioModel
+    private var preview: Bool { model.yourVoice.previewActive }
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(model.selected?.title ?? "Listen to a take").font(.headline).lineLimit(1)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(preview ? model.yourVoice.previewTitle : (model.selected?.title ?? "Listen to a take"))
+                        .font(.headline).lineLimit(1)
+                    if !preview, let take = model.selected { Text(take.detail).font(.caption).foregroundStyle(RavenBrand.secondaryText) }
+                }
                 Spacer()
-                Button("Load script") { model.restoreSelectedScript() }.disabled(model.selected == nil || model.isGenerating)
-                Button("Show in Finder") { if let take = model.selected { NSWorkspace.shared.activateFileViewerSelecting([take.url]) } }.disabled(model.selected == nil)
-                Button("Export WAV…") { model.exportSelected() }.disabled(model.selected == nil)
+                if preview {
+                    Button("Return to takes") { model.yourVoice.stopPreview(clear: true) }
+                } else {
+                    Button("Load script") { model.restoreSelectedScript() }.disabled(model.selected == nil || model.isGenerating)
+                    Button("Show in Finder") { if let take = model.selected { NSWorkspace.shared.activateFileViewerSelecting([take.url]) } }.disabled(model.selected == nil)
+                    Button("Export WAV…") { model.exportSelected() }.disabled(model.selected == nil)
+                }
             }
-            HStack(spacing: 14) {
-                Button { model.playPause() } label: { Image(systemName: model.isPlaying ? "pause.circle.fill" : "play.circle.fill").font(.system(size: 32)) }
-                    .buttonStyle(.bordered).foregroundStyle(.primary)
-                    .accessibilityLabel(model.isPlaying ? "Pause take" : "Play take")
-                    .disabled(model.duration == 0 || model.yourVoice.isRecording)
-                Text(clock(model.position)).monospacedDigit().font(.caption).frame(width: 38)
-                Slider(value: Binding(get: { model.position }, set: { model.seek($0) }), in: 0...max(model.duration, 0.01))
-                    .accessibilityLabel("Playback position")
-                    .accessibilityValue("\(clock(model.position)) of \(clock(model.duration))").disabled(model.duration == 0)
-                Text(clock(model.duration)).monospacedDigit().font(.caption).frame(width: 38)
-            }
-            if model.selected == nil { Text("Choose a recording from the sidebar, or generate a new one.").font(.caption).foregroundStyle(RavenBrand.secondaryText) }
+            AudioTransportView(waveform: preview ? model.yourVoice.previewWaveform : model.waveform,
+                position: preview ? model.yourVoice.previewPosition : model.position,
+                duration: preview ? model.yourVoice.previewDuration : model.duration,
+                isPlaying: preview ? model.yourVoice.previewIsPlaying : model.isPlaying,
+                disabled: model.yourVoice.isRecording || model.yourVoice.busy,
+                volume: preview ? model.yourVoice.previewVolume : model.playbackVolume,
+                playPause: { if preview { model.yourVoice.previewPlayPause() } else { model.playPause() } },
+                seek: { if preview { model.yourVoice.seekPreview($0) } else { model.seek($0) } },
+                setVolume: { if preview { model.yourVoice.previewVolume = $0 } else { model.playbackVolume = $0 } })
+            if !preview && model.selected == nil { Text("Choose a recording from the sidebar, or generate a new one.").font(.caption).foregroundStyle(RavenBrand.secondaryText) }
         }
     }
-    private func clock(_ seconds: Double) -> String { String(format: "%d:%02d", Int(seconds) / 60, Int(seconds) % 60) }
 }
 
 private struct StorageSetupView: View {

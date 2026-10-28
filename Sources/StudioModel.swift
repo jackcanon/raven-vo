@@ -76,6 +76,8 @@ struct Take: Identifiable, Hashable {
     var errorMessage: String?
     var logTail = ""
     var elapsed: Double = 0
+    let waveform = WaveformModel()
+    var playbackVolume: Double = 1 { didSet { player?.volume = Float(playbackVolume) } }
     var isPlaying = false
     var position: Double = 0
     var duration: Double = 0
@@ -153,6 +155,7 @@ struct Take: Identifiable, Hashable {
     init(engineOverride: URL? = nil, denoiserOverride: URL? = nil) {
         self.engineOverride = engineOverride
         self.yourVoice = YourVoiceStore(denoiserOverride: denoiserOverride)
+        yourVoice.beforePreview = { [weak self] in self?.stopPlayback() }
         refreshAvailability()
         if Self.volumeMounted() {
             if let data = try? Data(contentsOf: draftURL), let saved = try? JSONDecoder().decode(Draft.self, from: data) { draft = saved }
@@ -347,15 +350,17 @@ struct Take: Identifiable, Hashable {
         cancelled = true; status = "Cancelling…"; job.terminate()
     }
     func select(_ id: String?) {
-        stopPlayback(); player = nil; selectedID = id; position = 0; duration = 0
+        stopPlayback(); yourVoice.stopPreview(clear: true); waveform.load(nil)
+        player = nil; selectedID = id; position = 0; duration = 0
         guard let take = selected else { return }
         guard Self.volumeMounted() else { errorMessage = "Reconnect your storage volume to play this take."; return }
-        do { player = try AVAudioPlayer(contentsOf: take.url); player?.prepareToPlay(); duration = player?.duration ?? 0 }
+        do { player = try AVAudioPlayer(contentsOf: take.url); player?.volume = Float(playbackVolume); player?.prepareToPlay(); duration = player?.duration ?? 0; waveform.load(take.url) }
         catch { player = nil; errorMessage = "Could not open audio: \(error.localizedDescription)" }
     }
     func playPause() {
+        yourVoice.stopPreview(clear: true)
         guard let player else { return }
-        if player.isPlaying { player.pause(); isPlaying = false; return }
+        if player.isPlaying { player.pause(); playerTask?.cancel(); playerTask = nil; isPlaying = false; return }
         if position >= duration { player.currentTime = 0; position = 0 }
         isPlaying = player.play()
         playerTask?.cancel()
@@ -363,12 +368,16 @@ struct Take: Identifiable, Hashable {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(100))
                 guard !Task.isCancelled, let self, let player = self.player else { return }
-                self.position = player.currentTime; self.isPlaying = player.isPlaying
+                self.isPlaying = player.isPlaying
+                self.position = player.isPlaying ? player.currentTime : (player.currentTime == 0 ? self.duration : player.currentTime)
                 if !player.isPlaying { return }
             }
         }
     }
-    func seek(_ time: Double) { player?.currentTime = time; position = time }
+    func seek(_ time: Double) {
+        guard time.isFinite else { return }
+        let clamped = min(duration, max(0, time)); player?.currentTime = clamped; position = clamped
+    }
     func stopPlayback() { playerTask?.cancel(); playerTask = nil; player?.stop(); isPlaying = false }
     func restoreSelectedScript() {
         guard let take = selected, let data = try? Data(contentsOf: take.url.deletingPathExtension().appendingPathExtension("json")), let info = try? JSONDecoder().decode(TakeInfo.self, from: data) else { errorMessage = "This audition sample has no saved script. New takes include their script and voice settings."; return }
@@ -392,7 +401,7 @@ struct Take: Identifiable, Hashable {
             status = "Exported \(target.lastPathComponent)"
         } catch { errorMessage = "Export failed: \(error.localizedDescription)" }
     }
-    func shutdown() { yourVoice.flush(); saveTask?.cancel(); saveDraft(); cancel(); installer.cancel(); stopPlayback() }
+    func shutdown() { yourVoice.stopPreview(); yourVoice.flush(); saveTask?.cancel(); saveDraft(); cancel(); installer.cancel(); stopPlayback() }
 }
 enum StudioError: LocalizedError {
     case message(String)
