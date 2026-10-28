@@ -83,10 +83,11 @@ jobs:
         timeout-minutes: 10
         run: |
           set -o pipefail
-          timeout --signal=TERM --kill-after=20s 480s docker run --rm -e DEBIAN_FRONTEND=noninteractive -v "$GITHUB_WORKSPACE/dist/linux:/packages:ro" debian:13-slim bash -euxc '
+          timeout --signal=TERM --kill-after=20s 480s docker run --rm --init -e DEBIAN_FRONTEND=noninteractive -v "$GITHUB_WORKSPACE/dist/linux:/packages:ro" debian:13-slim bash -euxc '
             apt-get -o Acquire::ForceIPv4=true -o Acquire::Retries=1 -o Acquire::http::Timeout=30 update
             apt-get -o Acquire::ForceIPv4=true -o Acquire::Retries=1 -o Acquire::http::Timeout=30 install -y /packages/*-amd64.deb xvfb xauth
-            QT_QPA_PLATFORM=xcb xvfb-run -a timeout 30s /opt/raven-vo/RavenVO --smoke-test
+            QT_QPA_PLATFORM=offscreen timeout --kill-after=5s 30s /opt/raven-vo/RavenVO --smoke-test
+            QT_QPA_PLATFORM=xcb timeout --kill-after=5s 45s xvfb-run -e /dev/stderr -a /opt/raven-vo/RavenVO --smoke-test
           ' 2>&1 | tee .build/debian-smoke.log
       - uses: actions/upload-artifact@v4
         if: success()
