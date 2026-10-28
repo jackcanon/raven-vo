@@ -25,7 +25,7 @@ from .core import (ENGLISH, LANGUAGES, MODEL_SIZE, MODEL_SHA, SAMPLES, Store, at
                    checksum, download_model, generation_args, read_json, trash_take)
 from .jobs import Jobs, SettingsQueue
 
-RESOURCE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "resources"
+RESOURCE = Path(os.environ.get("RAVEN_VO_RESOURCES", Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "resources"))
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
 ENGINE = Path(os.environ.get("RAVEN_VO_ENGINE", RESOURCE / "engine/audiocpp_cli"))
 DENOISER = Path(os.environ.get("RAVEN_VO_DENOISER", RESOURCE / "engine/raven-denoise"))

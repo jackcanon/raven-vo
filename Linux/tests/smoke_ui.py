@@ -29,6 +29,11 @@ with tempfile.TemporaryDirectory(dir=root) as temp:
             time.sleep(0.01)
             if time.monotonic() - start > timeout:
                 raise AssertionError("Timed out: " + window.status.text())
+    seen = []
+    window.jobs.progress.connect(lambda count, total, text: seen.append((count, total)))
+    window.jobs.signals.progress.emit(2_998_284_288, 2_998_284_288, "Large model progress test")
+    app.processEvents()
+    assert seen[-1] == (2_998_284_288, 2_998_284_288)
     window.choose_storage_path(folder)
     wait_until(lambda: not window.jobs.pending and window.store is not None)
     assert window.preset.count() == 4

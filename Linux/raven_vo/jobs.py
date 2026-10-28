@@ -7,7 +7,7 @@ from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot
 class JobSignals(QObject):
     result = Signal(str, object)
     error = Signal(str, str)
-    progress = Signal(int, int, str)
+    progress = Signal(object, object, str)
 
 
 class Worker(QRunnable):
@@ -24,7 +24,7 @@ class Worker(QRunnable):
 
 class Jobs(QObject):
     failed = Signal(str)
-    progress = Signal(int, int, str)
+    progress = Signal(object, object, str)
     changed = Signal(bool)
     def __init__(self, parent=None):
         super().__init__(parent)
