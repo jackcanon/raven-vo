@@ -12,6 +12,6 @@ Raven VO is a local voice-over studio for Apple Silicon Macs, currently powered 
 
 Existing drafts, takes, language settings and model storage remain compatible. Seven languages: English, Chinese, Japanese, Korean, German, French and Spanish. No additional Ming download is needed if the model is already installed. Microphone permission is requested only after a recording action. Audio, voice samples and transcripts stay in the selected storage folder.
 
-Validation: real imported-reference cloning, sample conversion and noise reduction, saved reference restoration, Trash/recovery and failed-operation rollback, mode/language compatibility, and light/dark contrast checks. Raw-versus-cleaned listening is available because noise suppression can affect voice timbre and cannot remove every type of noise or echo.
+Validation: selected-microphone recording, live level metering and original/cleaned playback confirmed in a live user test; real imported-reference cloning, sample conversion and noise reduction, saved reference restoration, Trash/recovery and failed-operation rollback, mode/language compatibility, and light/dark contrast checks. Raw-versus-cleaned listening is available because noise suppression can affect voice timbre and cannot remove every type of noise or echo.
 
-Requires Apple Silicon and macOS 14 or later; tested on M4 Max / macOS 27.2. Download the ZIP, unzip it and replace the previous app. Full model, engine, cleanup and front-end licence notices are included.
+Requires Apple Silicon and macOS 14 or later; tested on M4 Max / macOS 27.2. Developer ID signed and Apple notarized, with a stapled ticket. Download the ZIP, unzip it and replace the previous app. Full model, engine, cleanup and front-end licence notices are included.
