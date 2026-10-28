@@ -752,7 +752,7 @@ class Window(QMainWindow):
             self.recording = True
             self.capture_io = self.capture.start()
             if self.capture_io is None or self.capture.error() != QAudio.NoError:
-                raise ValueError("The microphone did not start. Check PipeWire/PulseAudio input permissions and device availability.")
+                raise ValueError("The microphone did not start. Check the selected input, desktop microphone permissions and whether another application is using the device.")
             self.capture_io.readyRead.connect(self.capture_ready)
             self.record_timer.start()
             self.status.setText("Recording the selected microphone. Press Stop recording to finish early.")
