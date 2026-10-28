@@ -68,7 +68,8 @@ def prepare_sample(source: Path, folder: Path, helper: Path | None, cleanup=Fals
         with tempfile.TemporaryDirectory(prefix="raven-cleanup-", dir=folder) as temp:
             src, dest = Path(temp) / "input.pcm", Path(temp) / "output.pcm"
             src.write_bytes(pcm.tobytes())
-            subprocess.run([str(helper), str(src), str(dest)], check=True, timeout=60, capture_output=True)
+            subprocess.run([str(helper), str(src), str(dest)], check=True, timeout=60, capture_output=True,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             result = np.frombuffer(dest.read_bytes(), dtype="<i2")
             if len(result) != len(pcm):
                 raise ValueError("Cleanup returned an incomplete recording; the raw sample was preserved.")

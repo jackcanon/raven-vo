@@ -27,10 +27,13 @@ from .jobs import Jobs, SettingsQueue
 
 RESOURCE = Path(os.environ.get("RAVEN_VO_RESOURCES", Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "resources"))
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
-ENGINE = Path(os.environ.get("RAVEN_VO_ENGINE", RESOURCE / "engine/audiocpp_cli"))
-DENOISER = Path(os.environ.get("RAVEN_VO_DENOISER", RESOURCE / "engine/raven-denoise"))
+PLATFORM = "Windows" if sys.platform == "win32" else "Linux"
+EXE_SUFFIX = ".exe" if sys.platform == "win32" else ""
+ENGINE = Path(os.environ.get("RAVEN_VO_ENGINE", RESOURCE / ("engine/audiocpp_cli" + EXE_SUFFIX)))
+DENOISER = Path(os.environ.get("RAVEN_VO_DENOISER", RESOURCE / ("engine/raven-denoise" + EXE_SUFFIX)))
 BACKEND = os.environ.get("RAVEN_VO_BACKEND", "cpu")
-CONFIG = Path(os.environ.get("RAVEN_VO_CONFIG", Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "raven-vo/settings.json"))
+CONFIG_HOME = Path(os.environ.get("APPDATA", Path.home() / "AppData/Roaming")) if sys.platform == "win32" else Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+CONFIG = Path(os.environ.get("RAVEN_VO_CONFIG", CONFIG_HOME / "raven-vo/settings.json"))
 
 
 def button(text, action, accessible=None):
@@ -87,7 +90,7 @@ class Waveform(QWidget):
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Raven VO · Linux Preview")
+        self.setWindowTitle(f"Raven VO · {PLATFORM} Preview")
         icon = RESOURCE / "AppIcon.png"
         if not icon.exists():
             icon = SOURCE_ROOT / "Assets/AppIcon.png"
@@ -169,7 +172,7 @@ class Window(QMainWindow):
         content = QWidget()
         area = QVBoxLayout(content)
         area.addWidget(QLabel("<h2>Raven VO</h2>A voice for your story. Created on your computer."))
-        area.addWidget(QLabel("Currently powered by Ming 0.5B · Local generation · Linux CPU preview"))
+        area.addWidget(QLabel(f"Currently powered by Ming 0.5B · Local generation · {PLATFORM} CPU preview"))
         storage = QHBoxLayout()
         self.storage_label = QLabel("Choose where to store your model, takes and voice samples.")
         self.storage_label.setWordWrap(True)
@@ -880,6 +883,7 @@ class Window(QMainWindow):
         self.saves.flush_and_close()
 
     def close_after_save(self):
+        self.player.setSource(QUrl())
         self.real_close = True
         self.close()
 
@@ -888,6 +892,11 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Raven VO")
     app.setOrganizationName("Happy Jack Media")
+    app.setApplicationVersion(__version__)
+    app.setDesktopFileName("raven-vo")
+    if sys.platform == "win32":
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("HappyJack.RavenVO")
     app.setStyle("Fusion")
     palette = QPalette()
     for role, value in [(QPalette.Window, "#242424"), (QPalette.WindowText, "#f3f3f3"),

@@ -1,0 +1,87 @@
+name: Windows preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['Windows/**', 'Linux/raven_vo/**', 'Linux/requirements.txt', 'Linux/tests/**', 'Linux/scripts/collect-licenses.py', 'Tools/RavenDenoise.c', '.github/workflows/windows-preview.yml']
+permissions:
+  contents: read
+concurrency:
+  group: raven-windows-preview-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      PYTHONPATH: ${{ github.workspace }}/Linux
+      RAVEN_TEST_ROOT: ${{ github.workspace }}/.build/windows-tests
+      RAVEN_CI_MODEL_ROOT: ${{ github.workspace }}/.build/windows-inference
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Install frontend and packaging dependencies
+        run: python -m pip install -r Linux/requirements.txt pyinstaller==6.13.0 Pillow==11.2.1
+      - name: Shared core and isolated desktop tests
+        run: |
+          python -m unittest discover -s Linux/tests -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Core tests failed' }
+          python Linux/tests/smoke_ui.py
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop tests failed' }
+      - uses: actions/cache@v4
+        id: nativecache
+        with:
+          path: |
+            .build/windows-audio.cpp
+            .build/windows-rnnoise
+            .build/windows-raven-denoise.exe
+          key: raven-windows-native-msvc-bdf78b9-70f1d25-v1
+      - name: Build pinned Windows CPU engine and cleanup helper
+        run: |
+          Windows/scripts/build-engine.ps1
+          Windows/scripts/build-denoiser.ps1
+      - uses: actions/cache/save@v4
+        if: steps.nativecache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            .build/windows-audio.cpp
+            .build/windows-rnnoise
+            .build/windows-raven-denoise.exe
+          key: raven-windows-native-msvc-bdf78b9-70f1d25-v1
+      - name: Native cleanup and CPU speech generation
+        env:
+          RAVEN_TEST_DENOISER: ${{ github.workspace }}/.build/windows-raven-denoise.exe
+          RAVEN_VO_ENGINE: ${{ github.workspace }}/.build/windows-audio.cpp/build/windows-cpu-release/bin/audiocpp_cli.exe
+        run: |
+          python -m unittest discover -s Linux/tests -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Native cleanup failed' }
+          python Linux/tests/acceptance.py
+          if ($LASTEXITCODE -ne 0) { throw 'Native speech generation failed' }
+      - name: Package portable application and per-user setup
+        run: Windows/scripts/package.ps1
+      - name: Verify portable and silently installed applications
+        run: Windows/scripts/smoke-packaged.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Raven-VO-Windows-preview-x64
+          path: |
+            dist/windows/*-portable.zip
+            dist/windows/*-setup.exe
+            dist/windows/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Windows-validation-evidence
+          path: |
+            .build/windows-tests/linux-ui-smoke.png
+            .build/windows-inference/native-engine.log
+            .build/windows-inference/samples/linux-real-inference.wav

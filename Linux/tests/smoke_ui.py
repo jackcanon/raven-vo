@@ -8,6 +8,7 @@ import time
 import numpy as np
 import soundfile as sf
 from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QEvent
 from raven_vo.app import Window
 
 root = Path(os.environ.get("RAVEN_TEST_ROOT", Path(__file__).resolve().parents[2] / ".build/linux-tests"))
@@ -68,4 +69,7 @@ with tempfile.TemporaryDirectory(dir=root) as temp:
     wait_until(lambda: window.real_close and not window.isVisible())
     data = json.loads((folder / "app-data/linux-draft.json").read_text())
     assert data["script"] == "This draft is preserved."
+    window.deleteLater()
+    app.sendPostedEvents(None, QEvent.DeferredDelete)
+    app.processEvents()
 print("LINUX_UI_SMOKE_PASSED: languages, separate modes, explicit missing-input rejection, async waveform, accessible transport, draft save and graceful flush")
