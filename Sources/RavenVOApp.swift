@@ -66,6 +66,10 @@ import AppKit
             if alert.runModal() == .alertFirstButtonReturn { return .terminateCancel }
         }
         model?.shutdown()
-        return .terminateNow
+        Task { @MainActor in
+            await model?.flushSettings()
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
     }
 }

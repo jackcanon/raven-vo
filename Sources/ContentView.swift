@@ -170,6 +170,24 @@ private struct YourVoiceSettings: View {
             Text("Ming matches your voice from a short recording—no training step needed.")
                 .font(.caption).foregroundStyle(RavenBrand.secondaryText)
             if model.usesYourVoice {
+                Picker("Microphone", selection: Binding(get: { model.yourVoice.selectedMicrophoneID }, set: { model.yourVoice.selectedMicrophoneID = $0 })) {
+                    Text("System default · \(model.yourVoice.defaultMicrophoneName)").tag("")
+                    ForEach(model.yourVoice.microphones) { microphone in Text(microphone.name).tag(microphone.id) }
+                    if !model.yourVoice.selectedMicrophoneID.isEmpty && !model.yourVoice.microphones.contains(where: { $0.id == model.yourVoice.selectedMicrophoneID }) {
+                        Text("Selected microphone unavailable").tag(model.yourVoice.selectedMicrophoneID)
+                    }
+                }.disabled(model.yourVoice.busy || model.yourVoice.isRecording)
+                Button("Refresh microphones") { model.yourVoice.refreshMicrophones() }
+                    .disabled(model.yourVoice.busy || model.yourVoice.isRecording)
+                Text("Choose the input you want to record. The meter runs only during recording.")
+                    .font(.caption).foregroundStyle(RavenBrand.secondaryText)
+                if model.yourVoice.isRecording {
+                    ProgressView(value: model.yourVoice.inputLevel)
+                        .accessibilityLabel("Microphone input level")
+                        .accessibilityValue("\(Int(model.yourVoice.inputDBFS)) decibels below full scale")
+                    Text("\(model.yourVoice.microphoneStatus) · \(Int(model.yourVoice.inputDBFS)) dBFS")
+                        .font(.caption).foregroundStyle(RavenBrand.secondaryText)
+                }
                 if !model.yourVoice.isRecording {
                     Button("1. Check microphone") { model.stopPlayback(); model.yourVoice.startRecording(micCheck: true) }
                         .disabled(model.yourVoice.busy)
@@ -219,6 +237,8 @@ private struct YourVoiceSettings: View {
                 if let error = model.yourVoice.error { Label(error, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.primary) }
             }
         }
+        .task { model.yourVoice.refreshMicrophones() }
+        .onChange(of: model.usesYourVoice) { _, enabled in if enabled { model.yourVoice.refreshMicrophones() } }
     }
 }
 private struct ScriptEditor: View {

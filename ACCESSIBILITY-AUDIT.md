@@ -30,3 +30,7 @@ References:
 - https://developer.apple.com/design/human-interface-guidelines/accessibility
 
 Evidence is retained locally under .build: contrast-results.txt, keyboard-results.txt, live-accessibility-tree.json and accessibility-foreground.png. Preview: .build/accessibility-reviewed/Raven VO.app.
+
+## 0.4.0 microphone follow-up
+
+A live test exposed a main-thread draft-write stall when enabling Your Voice. Draft and voice-settings writes now use ordered background queues; quitting flushes queued settings. A blocked-write regression verifies the UI actor remains responsive. Added a labelled microphone picker, unavailable-device state, refresh action, and recording-only input meter with a spoken numeric value and text guidance. Seven inputs were discovered locally; a missing selected device is rejected without fallback. Hardware capture on the selected input remains a user acceptance check.

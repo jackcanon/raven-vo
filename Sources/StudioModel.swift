@@ -85,6 +85,8 @@ struct Take: Identifiable, Hashable {
     @ObservationIgnored private var logHandle: FileHandle?
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     @ObservationIgnored private var saveTask: Task<Void, Never>?
+    @ObservationIgnored private let settingsWriter = SettingsWriter()
+    @ObservationIgnored private var saveRevision = 0
     @ObservationIgnored private var playerTask: Task<Void, Never>?
     @ObservationIgnored private var player: AVAudioPlayer?
     @ObservationIgnored private var runID: UUID?
@@ -198,11 +200,20 @@ struct Take: Identifiable, Hashable {
     }
     func saveDraft() {
         guard Self.volumeMounted() else { draftStatus = "Draft not saved — reconnect your storage volume."; return }
+        saveRevision += 1
+        let revision = saveRevision
         do {
-            try FileManager.default.createDirectory(at: draftURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try JSONEncoder().encode(draft).write(to: draftURL, options: .atomic)
-            draftStatus = "Draft saved"
+            let data = try JSONEncoder().encode(draft)
+            draftStatus = "Saving draft…"
+            settingsWriter.submit([(data, draftURL)]) { [weak self] error in
+                guard let self, self.saveRevision == revision else { return }
+                self.draftStatus = error.map { "Could not save draft: \($0)" } ?? "Draft saved"
+            }
         } catch { draftStatus = "Could not save draft: \(error.localizedDescription)" }
+    }
+    func flushSettings() async {
+        await settingsWriter.flush()
+        await yourVoice.flushSettings()
     }
     func reloadTakes() {
         guard Self.volumeMounted() else { refreshAvailability(); return }

@@ -100,13 +100,32 @@ enum VoiceSampleAudio {
     var busy = false
     var elapsed: Double = 0
     var error: String?
+    var microphones: [MicrophoneChoice] = []
+    var defaultMicrophoneName = "System default"
+    var selectedMicrophoneID = StoragePreference.preferences.string(forKey: "RavenVO.microphone.v1") ?? "" {
+        didSet { StoragePreference.preferences.set(selectedMicrophoneID, forKey: "RavenVO.microphone.v1") }
+    }
+    var inputDBFS: Double = -80
+    var inputLevel: Double { max(0, min(1, (inputDBFS + 60) / 60)) }
+    var microphoneStatus: String {
+        if inputDBFS < -55 { return "No clear signal — check the input and microphone gain." }
+        if inputDBFS > -3 { return "Very loud — lower microphone gain to avoid clipping." }
+        return "Input detected"
+    }
+    func refreshMicrophones() {
+        guard !isRecording && !busy else { return }
+        Task {
+            let result = await Task.detached { (MicrophoneCapture.choices(), MicrophoneCapture.defaultName()) }.value
+            microphones = result.0; defaultMicrophoneName = result.1
+        }
+    }
     @ObservationIgnored private let denoiserOverride: URL?
     @ObservationIgnored private var samplePlayer: AVAudioPlayer?
-    @ObservationIgnored private var recorder: AVAudioRecorder?
+    @ObservationIgnored private var recorder: MicrophoneCapture?
     @ObservationIgnored private var recordingURL: URL?
-    @ObservationIgnored private var timer: Task<Void, Never>?
-    @ObservationIgnored private var saveTask: Task<Void, Never>?
+        @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private var loading = false
+    @ObservationIgnored private let settingsWriter = SettingsWriter()
     private var base: URL? { StoragePreference.folder }
     private var checkIndex: URL? { base?.appendingPathComponent("app-data/mic-check.json") }
     private var index: URL? { base?.appendingPathComponent("app-data/your-voice.json") }
@@ -138,10 +157,13 @@ enum VoiceSampleAudio {
         guard var profile, let index, StoragePreference.mounted else { return }
         profile.transcript = transcript
         do {
-            try FileManager.default.createDirectory(at: index.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try JSONEncoder().encode(profile).write(to: index, options: .atomic)
-            if let sampleURL { try JSONEncoder().encode(profile).write(to: sampleURL.deletingPathExtension().appendingPathExtension("json"), options: .atomic) }
+            let data = try JSONEncoder().encode(profile)
+            var files = [(data, index)]
+            if let sampleURL { files.append((data, sampleURL.deletingPathExtension().appendingPathExtension("json"))) }
             self.profile = profile
+            settingsWriter.submit(files) { [weak self] error in
+                if let error { self?.error = "Could not save your voice settings: \(error)" }
+            }
         } catch { self.error = "Could not save your voice settings: \(error.localizedDescription)" }
     }
     func importSample() {
@@ -174,8 +196,10 @@ enum VoiceSampleAudio {
                     self.micCheck = prepared
                     denoiseEnabled = true
                     if let checkIndex {
-                        try FileManager.default.createDirectory(at: checkIndex.deletingLastPathComponent(), withIntermediateDirectories: true)
-                        try JSONEncoder().encode(prepared).write(to: checkIndex, options: .atomic)
+                        let data = try JSONEncoder().encode(prepared)
+                        settingsWriter.submit([(data, checkIndex)]) { [weak store = self] error in
+                            if let error { store?.error = "Could not save microphone check: \(error)" }
+                        }
                     }
                     AccessibilityAnnouncement.post("Microphone check ready. Compare the original and cleaned sample, then record your voice sample.")
                 } else {
@@ -222,30 +246,29 @@ enum VoiceSampleAudio {
             }
             do {
                 guard StoragePreference.mounted, let samples else { throw StudioError.message("Reconnect your storage volume before recording.") }
-                try FileManager.default.createDirectory(at: samples, withIntermediateDirectories: true)
                 let url = samples.appendingPathComponent("Recording-\(UUID().uuidString).wav")
-                let audio = try AVAudioRecorder(url: url, settings: [AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 24000, AVNumberOfChannelsKey: 1, AVLinearPCMBitDepthKey: 16, AVLinearPCMIsFloatKey: false])
-                guard audio.record(forDuration: 12) else { throw StudioError.message("The microphone could not start recording.") }
-                recorder = audio; recordingURL = url; recordingIsMicCheck = micCheck; elapsed = 0; isRecording = true
-                timer = Task { [weak self] in
-                    while !Task.isCancelled {
-                        try? await Task.sleep(for: .milliseconds(100))
-                        guard !Task.isCancelled, let self, self.isRecording else { return }
-                        self.elapsed = self.recorder?.currentTime ?? 0
-                        if self.elapsed >= 12 || self.recorder?.isRecording != true { self.stopRecording(); return }
-                    }
-                }
-            } catch { self.error = error.localizedDescription }
+                let audio = MicrophoneCapture()
+                recorder = audio; recordingURL = url; recordingIsMicCheck = micCheck; elapsed = 0; inputDBFS = -80
+                try await audio.start(deviceID: selectedMicrophoneID, url: url, onLevel: { [weak self] db, seconds in
+                    self?.inputDBFS = db; self?.elapsed = seconds
+                }, onFinish: { [weak self] url, message in
+                    guard let self else { return }
+                    self.recorder = nil; self.recordingURL = nil; self.isRecording = false; self.busy = false
+                    self.inputDBFS = -80
+                    if let message { self.error = "Recording failed: \(message)"; return }
+                    guard StoragePreference.mounted else { self.error = "Storage was disconnected. Reconnect it to recover the recording."; return }
+                    self.install(url, micCheck: micCheck)
+                })
+                isRecording = true
+            } catch { recorder = nil; recordingURL = nil; self.error = error.localizedDescription }
         }
     }
     func stopRecording() {
-        guard isRecording else { return }
-        timer?.cancel(); timer = nil
-        recorder?.stop(); recorder = nil; isRecording = false
-        guard let url = recordingURL else { return }
-        recordingURL = nil
-        guard StoragePreference.mounted else { error = "Storage was disconnected. Reconnect it to recover any recording that was saved."; return }
-        install(url, micCheck: recordingIsMicCheck)
+        guard isRecording, !busy else { return }
+        busy = true
+        recorder?.stop()
+        // Keep recording state until AVCapture confirms the file is finalized.
     }
     func flush() { saveTask?.cancel(); save() }
+    func flushSettings() async { await settingsWriter.flush() }
 }

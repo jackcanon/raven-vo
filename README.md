@@ -100,3 +100,5 @@ The mic check estimates recording level, background noise and clipping. These ar
 Noise reduction can affect timbre and cannot repair clipping or remove all echo, competing voices or music. Compare the original and processed recording; lower the input level and rerecord if clipping is detected. Mic and voice samples are not uploaded to a service.
 
 RNNoise source: Xiph.Org, BSD-3-Clause, pinned at `70f1d256acd4b34a572f999a05c87bf00b67730d`. Its model archive SHA-256 is `0a8755f8e2d834eff6a54714ecc7d75f9932e845df35f8b59bc52a7cfe6e8b37`. The build fetches and verifies that archive; users receive the compiled cleanup helper. Full notices are bundled under `ThirdParty/RNNoise`.
+
+Microphone input can be selected in **Your Voice**. The choice is remembered; **System default** displays the current input name. Use **Refresh microphones** after connecting hardware. The level meter runs during a user-started recording; opening Your Voice does not start capture.
