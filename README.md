@@ -2,9 +2,19 @@
 
 Part of the RavenMix and RavenAudio family. Product website: [www.ravenvo.app](https://www.ravenvo.app).
 
-Raven VO is a native voice-over studio for Apple Silicon Macs, currently powered by Ming 0.5B. Write a script, choose a voice, generate locally, and export a WAV for your editing software.
+Raven VO is a local voice-over studio, currently powered by Ming 0.5B. Write a script, choose a voice, generate locally, and export a WAV for your editing software.
 
-## Install
+## Desktop builds
+
+| Platform | Status | Details |
+| --- | --- | --- |
+| Apple Silicon macOS | Stable 0.4.0 | [Download](https://github.com/jackcanon/raven-vo/releases/tag/v0.4.0) |
+| Ubuntu 24.04 / Debian 13, x86-64 CPU | Preview; native generation and packaged startup tested | [Linux guide](Linux/README.md) |
+| Windows 11 x64 CPU | Preview; native generation, portable app and installer tested on the hosted Windows runner | [Windows guide](Windows/README.md) |
+
+Preview installers are staged as GitHub drafts for physical microphone/playback acceptance. Windows previews are unsigned. Source builds and CI validation are available in this repository.
+
+## Install on macOS
 
 Download the macOS arm64 ZIP from [Releases](https://github.com/jackcanon/raven-vo/releases), unzip it, and drag **Raven VO.app** into Applications.
 
