@@ -113,7 +113,7 @@ class Window(QMainWindow):
         self.jobs.changed.connect(lambda _: self.update_enabled())
         self.jobs.progress.connect(self.download_progress)
         self.saves.failed.connect(self.error)
-        self.saves.flushed.connect(self.close_after_save)
+        self.saves.flushed.connect(self.close_after_save, Qt.QueuedConnection)
         self.wave_jobs.failed.connect(lambda message: self.status.setText("Waveform unavailable; playback controls are still available. " + message))
         self.player = QMediaPlayer(self)
         self.audio_output = QAudioOutput(self)

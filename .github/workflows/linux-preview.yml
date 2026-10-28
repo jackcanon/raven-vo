@@ -25,13 +25,14 @@ jobs:
       - name: Install build and desktop libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-13 g++-13 cmake ninja-build libegl1 libgl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-cursor0 libpulse0
+          sudo apt-get install -y gcc-13 g++-13 cmake ninja-build libegl1 libgl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-cursor0 libpulse0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 libxcb-xinerama0 libxcb-xinput0 xvfb xauth pulseaudio libpipewire-0.3-0
           python -m pip install -r Linux/requirements.txt pyinstaller==6.13.0
       - name: Core and isolated desktop tests
         run: |
           python -m unittest discover -s Linux/tests -p 'test_*.py' -v
           python Linux/tests/smoke_ui.py
       - uses: actions/cache@v4
+        id: nativecache
         with:
           path: |
             .build/linux-audio.cpp
@@ -42,6 +43,14 @@ jobs:
         run: |
           Linux/scripts/build-engine.sh
           Linux/scripts/build-denoiser.sh
+      - uses: actions/cache/save@v4
+        if: steps.nativecache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            .build/linux-audio.cpp
+            .build/linux-rnnoise
+            .build/linux-raven-denoise
+          key: raven-linux-native-gcc13-bdf78b9-70f1d25-v1
       - name: Native cleanup acceptance
         env:
           RAVEN_TEST_DENOISER: ${{ github.workspace }}/.build/linux-raven-denoise
@@ -56,7 +65,9 @@ jobs:
         run: |
           cd /tmp
           "$GITHUB_WORKSPACE/dist/linux/RavenVO/_internal/resources/engine/audiocpp_cli" --help > "$GITHUB_WORKSPACE/.build/frozen-engine-help.log" 2>&1
+          unset PYTHONPATH
           QT_QPA_PLATFORM=offscreen timeout 30s "$GITHUB_WORKSPACE/dist/linux/RavenVO/RavenVO" --smoke-test > "$GITHUB_WORKSPACE/.build/frozen-smoke.log" 2>&1
+          QT_QPA_PLATFORM=xcb xvfb-run -a timeout 30s "$GITHUB_WORKSPACE/dist/linux/RavenVO/RavenVO" --smoke-test >> "$GITHUB_WORKSPACE/.build/frozen-smoke.log" 2>&1
       - uses: actions/upload-artifact@v4
         if: success()
         with:

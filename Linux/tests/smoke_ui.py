@@ -65,7 +65,7 @@ with tempfile.TemporaryDirectory(dir=root) as temp:
     app.processEvents()
     window.grab().save(str(root / "linux-ui-smoke.png"))
     window.close()
-    wait_until(lambda: window.real_close)
+    wait_until(lambda: window.real_close and not window.isVisible())
     data = json.loads((folder / "app-data/linux-draft.json").read_text())
     assert data["script"] == "This draft is preserved."
 print("LINUX_UI_SMOKE_PASSED: languages, separate modes, explicit missing-input rejection, async waveform, accessible transport, draft save and graceful flush")
