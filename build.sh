@@ -24,7 +24,7 @@ python3 - "$app" "$engine_source" <<'PY'
 import plistlib,sys,shutil
 from pathlib import Path
 app,engine=map(Path,sys.argv[1:])
-(app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIconFile':'AppIcon','CFBundleExecutable':'RavenVO','CFBundleIdentifier':'app.happyjack.mingvoiceovers','CFBundleName':'Raven VO','CFBundleDisplayName':'Raven VO','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.4.0','CFBundleVersion':'5','LSMinimumSystemVersion':'14.0','NSMicrophoneUsageDescription':'Record a short sample of your voice for local voice-over generation. Recordings stay in your selected storage folder.','NSHighResolutionCapable':True,'NSPrincipalClass':'NSApplication'}))
+(app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIconFile':'AppIcon','CFBundleExecutable':'RavenVO','CFBundleIdentifier':'app.happyjack.mingvoiceovers','CFBundleName':'Raven VO','CFBundleDisplayName':'Raven VO','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.4.0','CFBundleVersion':'6','LSMinimumSystemVersion':'14.0','NSMicrophoneUsageDescription':'Record a short sample of your voice for local voice-over generation. Recordings stay in your selected storage folder.','NSHighResolutionCapable':True,'NSPrincipalClass':'NSApplication'}))
 root=app/'Contents/Resources/ThirdParty'
 for directory in [engine,engine/'external']:
     for path in (directory.glob('*') if directory==engine else directory.rglob('*')):

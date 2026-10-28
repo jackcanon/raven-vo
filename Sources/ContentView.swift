@@ -176,7 +176,7 @@ private struct YourVoiceSettings: View {
                     if !model.yourVoice.selectedMicrophoneID.isEmpty && !model.yourVoice.microphones.contains(where: { $0.id == model.yourVoice.selectedMicrophoneID }) {
                         Text("Selected microphone unavailable").tag(model.yourVoice.selectedMicrophoneID)
                     }
-                }.disabled(model.yourVoice.busy || model.yourVoice.isRecording)
+                }.accessibilityLabel("Microphone").disabled(model.yourVoice.busy || model.yourVoice.isRecording)
                 Button("Refresh microphones") { model.yourVoice.refreshMicrophones() }
                     .disabled(model.yourVoice.busy || model.yourVoice.isRecording)
                 Text("Choose the input you want to record. The meter runs only during recording.")
