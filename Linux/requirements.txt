@@ -1,0 +1,5 @@
+PySide6==6.8.3
+numpy==2.2.6
+scipy==1.15.3
+soundfile==0.13.1
+Send2Trash==1.8.3

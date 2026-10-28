@@ -25,3 +25,6 @@ model-checks
 !Resources/*.entitlements
 
 *.pcm
+
+!Linux/raven_vo/chinese_voices.json
+!Linux/requirements.txt

@@ -1,0 +1,65 @@
+name: Linux preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['Linux/**', '.github/workflows/linux-preview.yml', 'Tools/RavenDenoise.c', 'Notices/**']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      PYTHONPATH: ${{ github.workspace }}/Linux
+      RAVEN_TEST_ROOT: ${{ github.workspace }}/.build/linux-tests
+      RAVEN_CI_MODEL_ROOT: ${{ github.workspace }}/.build/linux-inference
+      QT_QPA_PLATFORM: offscreen
+      CC: gcc-13
+      CXX: g++-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install build and desktop libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-13 g++-13 cmake ninja-build libegl1 libgl1 libdbus-1-3 libxkbcommon-x11-0 libxcb-cursor0 libpulse0
+          python -m pip install -r Linux/requirements.txt pyinstaller==6.13.0
+      - name: Core and isolated desktop tests
+        run: |
+          python -m unittest discover -s Linux/tests -p 'test_*.py' -v
+          python Linux/tests/smoke_ui.py
+      - name: Build pinned native CPU engine and RNNoise
+        run: |
+          Linux/scripts/build-engine.sh
+          Linux/scripts/build-denoiser.sh
+      - name: Actual local-model CPU generation
+        env:
+          RAVEN_VO_ENGINE: ${{ github.workspace }}/.build/linux-audio.cpp/build/raven-linux/bin/audiocpp_cli
+        run: python Linux/tests/acceptance.py
+      - name: Package desktop preview
+        run: Linux/scripts/package.sh
+      - name: Verify frozen application starts without a source checkout
+        run: |
+          cd /tmp
+          "$GITHUB_WORKSPACE/dist/linux/RavenVO/_internal/resources/engine/audiocpp_cli" --help > "$GITHUB_WORKSPACE/.build/frozen-engine-help.log" 2>&1
+          QT_QPA_PLATFORM=offscreen timeout 30s "$GITHUB_WORKSPACE/dist/linux/RavenVO/RavenVO" --smoke-test > "$GITHUB_WORKSPACE/.build/frozen-smoke.log" 2>&1
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: Raven-VO-Linux-preview-amd64
+          path: |
+            dist/linux/*.tar.gz
+            dist/linux/*.deb
+            dist/linux/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Linux-validation-evidence
+          path: |
+            .build/linux-tests/linux-ui-smoke.png
+            .build/linux-inference/native-engine.log
+            .build/linux-inference/samples/linux-real-inference.wav
+            .build/frozen-smoke.log
