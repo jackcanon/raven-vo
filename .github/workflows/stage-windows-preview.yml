@@ -1,0 +1,44 @@
+name: Stage Windows preview draft
+on:
+  workflow_run:
+    workflows: ['Windows preview']
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  stage:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Raven-VO-Windows-preview-x64
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: windows-packages
+      - name: Verify packages and stage a draft for hardware acceptance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          set -euo pipefail
+          (cd windows-packages && sha256sum -c SHA256SUMS)
+          cp WINDOWS-PREVIEW.md .windows-preview-notes.md
+          tag=v0.5.0-windows-preview.1
+          if gh release view "$tag" --json isDraft --jq .isDraft > .build-release-state 2>/dev/null; then
+            if [[ "$(cat .build-release-state)" != true ]]; then
+              echo 'The preview has already been published. Refusing to replace public release files.' >&2
+              exit 1
+            fi
+            gh release upload "$tag" windows-packages/*-setup.exe windows-packages/*-portable.zip windows-packages/SHA256SUMS --clobber
+            gh release edit "$tag" --draft --prerelease --target "$SOURCE_SHA" --notes-file .windows-preview-notes.md
+          else
+            gh release create "$tag" --draft --prerelease --target "$SOURCE_SHA" --title 'Raven VO 0.5.0 — Windows preview 1' --notes-file .windows-preview-notes.md windows-packages/*-setup.exe windows-packages/*-portable.zip windows-packages/SHA256SUMS
+          fi
+          gh release view "$tag" --json url,isDraft --jq '{url: .url, draft: .isDraft}'
