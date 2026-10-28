@@ -150,6 +150,20 @@ class Window(QMainWindow):
             store = Store(Path(config["storage"]), config["identity"])
             self.load_store(store)
         self.update_enabled()
+        if not config.get("storage") and not config.get("welcome_seen") and not os.environ.get("RAVEN_VO_STORAGE"):
+            QTimer.singleShot(0, self.show_welcome)
+
+    def show_welcome(self):
+        self.config["welcome_seen"] = True
+        self.preferences_changed()
+        welcome = QMessageBox(self)
+        welcome.setWindowTitle("Welcome to Raven VO")
+        welcome.setText("Three steps to your first voice-over")
+        welcome.setInformativeText("1. Choose a storage folder for your model, scripts and recordings. Keep an external drive connected if you use one.\n\n2. Click Download Ming. The model is approximately 3 GB; wait for download and verification to finish. Internet is needed for this step.\n\n3. Select a language and voice, enter a script, then click Generate voice-over. Generation runs locally.\n\nThe setup checklist stays visible until Ming is ready. You can return to this guide using Setup help.")
+        welcome.setStandardButtons(QMessageBox.Ok)
+        welcome.setModal(False)
+        self.welcome = welcome
+        welcome.show()
 
     def build_ui(self):
         host = QWidget()
@@ -168,6 +182,7 @@ class Window(QMainWindow):
         right = QWidget()
         column = QVBoxLayout(right)
         scroll = QScrollArea()
+        self.form_scroll = scroll
         scroll.setWidgetResizable(True)
         content = QWidget()
         area = QVBoxLayout(content)
@@ -181,11 +196,11 @@ class Window(QMainWindow):
         storage.addWidget(self.choose)
         self.download = button("Download / verify Ming", self.install_model)
         storage.addWidget(self.download)
-        area.addLayout(storage)
+        column.addLayout(storage)
         self.download_bar = QProgressBar()
         self.download_bar.setAccessibleName("Model download progress")
         self.download_bar.hide()
-        area.addWidget(self.download_bar)
+
         setup = QHBoxLayout()
         options = QWidget()
         settings = QVBoxLayout(options)
@@ -290,7 +305,7 @@ class Window(QMainWindow):
         self.script = QPlainTextEdit()
         self.script.setPlaceholderText("Write the words to speak. The app does not translate them.")
         self.script.setAccessibleName("Voice-over script")
-        self.script.setMinimumHeight(350)
+        self.script.setMinimumHeight(140)
         self.script.textChanged.connect(self.edited)
         script_box.addWidget(self.script, 1)
         self.characters = QLabel("0 characters")
@@ -303,13 +318,21 @@ class Window(QMainWindow):
         self.generate.setObjectName("primary")
         self.cancel = button("Cancel", self.cancel_work)
         controls.addWidget(self.generate); controls.addWidget(self.cancel); controls.addStretch()
-        area.addLayout(controls)
+        scroll.setWidget(content)
+        column.addWidget(scroll, 1)
+        self.setup_hint = QLabel()
+        self.setup_hint.setWordWrap(True)
+        self.setup_hint.setAccessibleName("Setup checklist and generation availability")
+        column.addWidget(self.setup_hint)
+        controls.addWidget(button("Setup help", self.show_welcome))
+        self.generate.setShortcut("Ctrl+Return")
+        self.generate.setToolTip("Generate voice-over (Ctrl+Enter)")
+        column.addLayout(controls)
+        column.addWidget(self.download_bar)
         self.status = QLabel("Choose a storage folder to begin.")
         self.status.setWordWrap(True)
         self.status.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        area.addWidget(self.status)
-        scroll.setWidget(content)
-        column.addWidget(scroll, 1)
+        column.addWidget(self.status)
         player = QGroupBox("Listen")
         transport = QVBoxLayout(player)
         top = QHBoxLayout()
@@ -354,6 +377,17 @@ class Window(QMainWindow):
     def update_enabled(self):
         ready = self.store is not None
         busy = self.busy()
+        if not ready:
+            guidance = "Step 1 of 3: Choose storage above. Then download Ming (~3 GB), select a voice and enter a script."
+        elif not self.model_ready:
+            guidance = "Step 2 of 3: Click Download Ming / verify above. Wait for the ~3 GB download and integrity check before generating."
+        elif not ENGINE.is_file():
+            guidance = "The speech engine is missing. Reinstall the complete Raven VO package."
+        elif not self.script.toPlainText().strip():
+            guidance = "Step 3 of 3: Select a language and voice, then enter a script or try a sample script."
+        else:
+            guidance = "Ready to generate locally. Ctrl+Enter generates your script."
+        self.setup_hint.setText(guidance)
         for item in (self.choose, self.download, self.microphone, self.refresh, self.import_audio, self.check, self.record, self.custom, self.own, self.language, self.cleanup):
             item.setEnabled(not busy and (ready or item is self.choose))
         self.preset.setEnabled(not busy and not self.custom.isChecked() and not self.own.isChecked())
@@ -480,7 +514,10 @@ class Window(QMainWindow):
         store = self.store
         self.cancel_event.clear()
         self.model_ready = False
+        self.download_bar.setRange(0, 0)
         self.download_bar.show()
+        self.status.setText("Connecting to download or verify Ming. You can cancel and resume later.")
+        self.download.setText("Download / verify Ming")
         self.jobs.run(lambda progress: download_model(store.model, progress, self.cancel_event), self.model_installed)
 
     def model_installed(self, path):
@@ -492,7 +529,7 @@ class Window(QMainWindow):
     def download_progress(self, count, total, text):
         self.download_bar.setRange(0, 1000)
         self.download_bar.setValue(int(count / max(1, total) * 1000))
-        self.status.setText(text)
+        self.status.setText(f"{text} {count / 1_000_000_000:.2f} / {total / 1_000_000_000:.2f} GB" if total and "Downloading" in text else text)
 
     def sample_script(self):
         self.script.setPlainText(SAMPLES.get(self.language.currentData(), SAMPLES["en"]))
@@ -863,6 +900,9 @@ class Window(QMainWindow):
             self.error(str(error))
 
     def error(self, message):
+        if self.download_bar.isVisible():
+            message += " Click Retry download / verify to resume or check the existing model."
+            self.download.setText("Retry download / verify")
         self.download_bar.hide()
         self.status.setText(message)
         self.status.setAccessibleDescription("Error: " + message)

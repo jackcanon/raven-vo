@@ -3,7 +3,7 @@ set -euo pipefail
 [[ "$(uname -s)" == Linux ]] || { echo 'Linux packages must be built on Linux.' >&2; exit 1; }
 repo="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$repo"
-version=0.5.0~preview1
+version=0.5.0~preview2
 engine="${LINUX_ENGINE_SOURCE:-$repo/.build/linux-audio.cpp}"
 resources="$repo/.build/linux-resources"
 mkdir -p "$resources/engine" "$resources/ThirdParty/RNNoise" "$resources/ThirdParty/FrontEnd" "$resources/ThirdParty/Ming"
@@ -46,7 +46,7 @@ for name in ['PySide6','PySide6-Essentials','PySide6-Addons','shiboken6','numpy'
     target=root/name/safe;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(src,target)
 PY
 arch="$(dpkg --print-architecture)"
-base="Raven-VO-0.5.0-linux-preview1-$arch"
+base="Raven-VO-0.5.0-linux-preview2-$arch"
 tar -C "$repo/dist/linux" -czf "$repo/dist/linux/$base.tar.gz" RavenVO
 stage="$repo/.build/linux-deb"
 mkdir -p "$stage/DEBIAN" "$stage/opt/raven-vo" "$stage/usr/share/applications" "$stage/usr/share/icons/hicolor/256x256/apps"

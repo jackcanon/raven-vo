@@ -1,3 +1,5 @@
+Preview 2 adds first-run setup guidance and keeps Generate, setup status, model progress and playback visible outside the scrolling form. Storage selection and model download remain visible at the top. The welcome guide appears once for new users; Setup help reopens it. Download errors offer retry/resume without discarding partial files. Existing storage, models, drafts and takes are preserved.
+
 Raven VO is a local voice-over studio, currently powered by Ming 0.5B. This is the first public Windows testing prerelease in the RavenMix and RavenAudio family. Website: https://www.ravenvo.app.
 
 **Target:** Windows 11 x64 on Intel/AMD PCs with AVX2, using CPU generation. No GPU or separate Python installation is required for the packaged application.

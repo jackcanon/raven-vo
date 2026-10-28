@@ -35,8 +35,18 @@ with tempfile.TemporaryDirectory(dir=root) as temp:
     window.jobs.signals.progress.emit(2_998_284_288, 2_998_284_288, "Large model progress test")
     app.processEvents()
     assert seen[-1] == (2_998_284_288, 2_998_284_288)
+    assert window.welcome.isVisible()
+    assert "3 GB" in window.welcome.informativeText()
+    window.welcome.accept()
+    assert "Step 1" in window.setup_hint.text()
     window.choose_storage_path(folder)
     wait_until(lambda: not window.jobs.pending and window.store is not None)
+    assert "Step 2" in window.setup_hint.text()
+    assert not window.generate.isEnabled()
+    window.download_bar.show()
+    window.error("Network disconnected")
+    assert "Retry" in window.download.text() and "resume" in window.status.text()
+    assert not window.download_bar.isVisible()
     assert window.preset.count() == 4
     window.language.setCurrentIndex(window.language.findData("zh"))
     assert window.preset.count() == 239
@@ -62,6 +72,22 @@ with tempfile.TemporaryDirectory(dir=root) as temp:
     assert window.play.accessibleName() == "Play or pause audio"
     assert window.position.accessibleName() == "Playback position"
     assert window.microphone.accessibleName() == "Microphone"
+    for width, height in [(1506, 826), (1366, 768), (1024, 640), (800, 600)]:
+        window.resize(width, height)
+        app.processEvents()
+        assert window.width() <= width and window.height() <= height
+        window.form_scroll.verticalScrollBar().setValue(window.form_scroll.verticalScrollBar().maximum())
+        app.processEvents()
+        for control in (window.generate, window.cancel, window.status, window.play, window.position):
+            point = control.mapTo(window, control.rect().center())
+            assert window.rect().contains(point), (width, height, control.accessibleName(), point)
+            assert not window.form_scroll.isAncestorOf(control)
+        window.activateWindow()
+        app.processEvents()
+        window.play.setFocus()
+        app.processEvents()
+        assert window.focusWidget() is window.play
+    assert window.generate.shortcut().toString() == "Ctrl+Return"
     window.resize(1100, 800)
     app.processEvents()
     window.grab().save(str(root / "linux-ui-smoke.png"))
@@ -69,6 +95,14 @@ with tempfile.TemporaryDirectory(dir=root) as temp:
     wait_until(lambda: window.real_close and not window.isVisible())
     data = json.loads((folder / "app-data/linux-draft.json").read_text())
     assert data["script"] == "This draft is preserved."
+    assert json.loads(module.CONFIG.read_text())["welcome_seen"]
+    again = Window()
+    again.show()
+    wait_until(lambda: not again.jobs.pending)
+    assert not hasattr(again, "welcome")
+    again.close()
+    wait_until(lambda: again.real_close)
+    again.deleteLater()
     window.deleteLater()
     app.sendPostedEvents(None, QEvent.DeferredDelete)
     app.processEvents()

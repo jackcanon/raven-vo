@@ -40,7 +40,7 @@ jobs:
           p.write_text(text)
           PYNOTES
           fi
-          tag=v0.5.0-linux-preview.1
+          tag=v0.5.0-linux-preview.2
           if gh release view "$tag" --json isDraft --jq .isDraft > .build-release-state 2>/dev/null; then
             if [[ "$(cat .build-release-state)" != true ]]; then
               echo 'The preview is already public; leaving its files unchanged. Bump the preview tag before staging another release.'
@@ -49,6 +49,6 @@ jobs:
             gh release upload "$tag" linux-packages/*.deb linux-packages/*.tar.gz linux-packages/SHA256SUMS --clobber
             gh release edit "$tag" --draft --prerelease --target "$SOURCE_SHA" --notes-file .linux-preview-notes.md
           else
-            gh release create "$tag" --draft --prerelease --target "$SOURCE_SHA" --title 'Raven VO 0.5.0 — Linux preview 1' --notes-file .linux-preview-notes.md linux-packages/*.deb linux-packages/*.tar.gz linux-packages/SHA256SUMS
+            gh release create "$tag" --draft --prerelease --target "$SOURCE_SHA" --title 'Raven VO 0.5.0 — Linux preview 2' --notes-file .linux-preview-notes.md linux-packages/*.deb linux-packages/*.tar.gz linux-packages/SHA256SUMS
           fi
           gh release view "$tag" --json url,isDraft --jq '{url: .url, draft: .isDraft}'

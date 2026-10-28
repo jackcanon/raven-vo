@@ -19,7 +19,7 @@ Copy-Item "$repo/LICENSE" "$bundle/LICENSE"
 Copy-Item "$repo/Windows/README.md" "$bundle/README.md"
 Copy-Item "$repo/Linux/LICENSING.md" "$bundle/LICENSING.md"
 $out = Join-Path $repo 'dist/windows'
-Compress-Archive -Path $bundle -DestinationPath "$out/Raven-VO-0.5.0-windows-preview1-x64-portable.zip" -Force
+Compress-Archive -Path $bundle -DestinationPath "$out/Raven-VO-0.5.0-windows-preview2-x64-portable.zip" -Force
 $iscc = Get-Command ISCC.exe -ErrorAction SilentlyContinue
 if ($iscc) { $compiler=$iscc.Source } else { $compiler="${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
 if (-not (Test-Path $compiler)) { throw 'Inno Setup 6 is required to build the installer' }

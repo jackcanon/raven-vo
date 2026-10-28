@@ -34,6 +34,7 @@ jobs:
         run: |
           python -m unittest discover -s Linux/tests -p 'test_*.py' -v
           python Linux/tests/smoke_ui.py
+          QT_SCALE_FACTOR=1.5 python Linux/tests/smoke_ui.py
       - uses: actions/cache@v4
         id: nativecache
         with:
