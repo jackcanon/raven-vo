@@ -6,9 +6,10 @@ struct StorageRecord: Codable {
     let volumeUUID: String?
 }
 @MainActor enum StoragePreference {
+    static var preferences: UserDefaults = .standard
     private static let key = "MingVoiceovers.storage.v1"
     static var record: StorageRecord? {
-        if let data = UserDefaults.standard.data(forKey: key), let value = try? JSONDecoder().decode(StorageRecord.self, from: data) { return value }
+        if let data = preferences.data(forKey: key), let value = try? JSONDecoder().decode(StorageRecord.self, from: data) { return value }
         let original = URL(fileURLWithPath: "/Volumes/10TB JBOD/Work/Ming-Voiceovers")
         if FileManager.default.fileExists(atPath: original.path), let value = try? makeRecord(original), value.volumePath == "/Volumes/10TB JBOD" { return value }
         return nil
@@ -30,6 +31,6 @@ struct StorageRecord: Codable {
     }
     static func choose(_ folder: URL) throws {
         let record = try makeRecord(folder)
-        UserDefaults.standard.set(try JSONEncoder().encode(record), forKey: key)
+        preferences.set(try JSONEncoder().encode(record), forKey: key)
     }
 }

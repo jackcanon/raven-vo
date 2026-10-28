@@ -12,8 +12,11 @@ On first launch:
 
 1. Choose a folder for the model, saved scripts, and recordings. External drives are supported.
 2. Click **Download model**. The approximately 3 GB full-precision Ming 0.5B model downloads directly into your selected folder. The app supports resuming interrupted transfers and verifies its pinned SHA-256 checksum before installing it.
-3. Select a language, then choose a voice. English offers American James, American Emma, British George, British Charlotte, or **Voice Design**. Paste your script and click **Generate voice-over** (Command-Return).
-4. Select a take to play it, load its script, reveal it in Finder, or export its WAV.
+3. Select a language and a preset voice. Or enable **Custom Voice** and describe the voice you want. The description shapes the voice; the separate **Script** editor contains the words to speak.
+4. To clone your own voice, enable **Your Voice**. Run **Check microphone**: stay quiet for two seconds, then speak naturally. Compare the original and cleaned test and choose whether to keep **Clean up new samples** enabled. Record or import a clean 3–15 second sample, then enter the new narration in Script. An optional sample transcript should match the words in the sample, not the new narration.
+5. Click **Generate voice-over** (Command-Return). Select a take to play it, load its script, reveal it in Finder, or export its WAV.
+6. Use **Delete take…**, the take's context menu, or Delete while the take list is focused to move its audio and saved settings to the Mac Trash. Current editor text and voice samples remain available.
+
 
 Generation works offline after the model is installed. There are no accounts, subscription, API keys, or cloud generation requests. The model downloader contacts Hugging Face and its content-delivery hosts. Scripts are passed only to the bundled local engine.
 
@@ -30,7 +33,7 @@ The app checks that the chosen storage volume is mounted. It never silently swit
 
 Choose English, Chinese, Japanese, Korean, German, French, or Spanish. Write the script in that language; the app does not translate text.
 
-The voice picker follows the selected language. English shows the four named presets and Voice Design. Chinese shows the upstream named catalogue, including emotion-specific variants, plus Natural voice and Voice Design; use the search field to find a name, emotion, or description. Japanese, Korean, German, French, and Spanish offer Natural voice and Voice Design because the model does not document dedicated named presets for those languages. Natural and designed voices may vary between takes.
+The voice picker follows the selected language. English shows four named presets. Chinese shows the upstream named catalogue, including emotion-specific variants, plus Natural voice; use the search field to find a name, emotion, or description. Japanese, Korean, German, French, and Spanish offer Natural voice because the model does not document dedicated named presets for those languages. Custom Voice and Your Voice are separate sections below the preset picker, available for each language. Natural and designed voices may vary between takes.
 
 Language is saved with drafts and takes. Existing drafts and takes default to English. Changing language resets an incompatible voice choice. The Chinese catalogue follows the [official control reference](https://github.com/inclusionAI/Ming-3.0-tts/blob/main/cookbooks/instruction_en.md); voice quality and pronunciation should be auditioned for your production.
 
@@ -38,7 +41,7 @@ Language is saved with drafts and takes. Existing drafts and takes default to En
 
 - **American James / American Emma:** American English presets.
 - **British George / British Charlotte:** British English presets.
-- **Voice Design:** describe tone, approximate age, accent, mood, and pacing. Designed voices may vary between takes.
+- **Custom Voice (Ming Voice Design):** describe tone, approximate age, accent, mood, and pacing. Designed voices may vary between takes.
 - Long scripts use the engine's automatic text chunking. The UI limits each take to 20,000 characters.
 - Output: original mono 44.1 kHz WAV; no automatic EQ, compression, or loudness processing.
 - Cancellation retains the script; unfinished audio stays in the runs folder rather than appearing as a finished take.
@@ -86,4 +89,14 @@ The release script signs the bundled engine first, signs the app with hardened r
 - [Ming 3.0 TTS](https://github.com/inclusionAI/Ming-3.0-tts): MIT-licensed model family by Inclusion AI / Ant Group.
 - [GGUF conversion](https://huggingface.co/audio-cpp/Ming-3.0-TTS-0.5B-GGUF): audio-cpp.
 
-Engine and dependency license notices are bundled in the app's `Contents/Resources/ThirdParty` directory. Model weights are downloaded separately, not stored in this repository or the app ZIP. See [THIRD_PARTY.md](THIRD_PARTY.md).
+Engine and dependency license notices are bundled in the app's `Contents/Resources/ThirdParty` directory. Ming model weights are downloaded separately and are not stored in this repository or app ZIP. RNNoise’s small cleanup network is compiled into the bundled denoiser. See [THIRD_PARTY.md](THIRD_PARTY.md).
+
+## Your Voice and microphone cleanup
+
+Your Voice uses a reference recording for voice cloning; it does not fine-tune or retrain the Ming checkpoint. Samples and optional transcripts are saved in `voice-references/` and `app-data/` under your selected storage folder. The microphone permission prompt appears only after a recording action. Recording stops automatically after twelve seconds and can be stopped earlier; at least three seconds are required.
+
+The mic check estimates recording level, background noise and clipping. These are signal measurements, not a guarantee that the recording contains clear speech. RNNoise cleanup is applied to each finished sample before cloning, rather than to a monitored live microphone stream. Raw and cleaned test recordings can be compared. Enabling cleanup applies to new samples; it does not replace an existing voice sample. Original recordings are kept. Existing takes retain the specific voice-reference file used to generate them.
+
+Noise reduction can affect timbre and cannot repair clipping or remove all echo, competing voices or music. Compare the original and processed recording; lower the input level and rerecord if clipping is detected. Mic and voice samples are not uploaded to a service.
+
+RNNoise source: Xiph.Org, BSD-3-Clause, pinned at `70f1d256acd4b34a572f999a05c87bf00b67730d`. Its model archive SHA-256 is `0a8755f8e2d834eff6a54714ecc7d75f9932e845df35f8b59bc52a7cfe6e8b37`. The build fetches and verifies that archive; users receive the compiled cleanup helper. Full notices are bundled under `ThirdParty/RNNoise`.

@@ -50,6 +50,13 @@ import AppKit
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if model?.isDeleting == true || model?.yourVoice.isRecording == true || model?.yourVoice.busy == true {
+            let alert = NSAlert()
+            alert.messageText = "Finish the current file operation or stop recording before quitting."
+            alert.informativeText = "Your recording and saved settings will stay in your selected storage folder."
+            alert.runModal()
+            return .terminateCancel
+        }
         if model?.isGenerating == true {
             let alert = NSAlert()
             alert.messageText = "Cancel generation and quit?"

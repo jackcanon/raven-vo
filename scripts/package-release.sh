@@ -9,9 +9,10 @@ mkdir -p "$output"
 # Remove build/download metadata from this generated bundle before sealing it.
 xattr -cr "$app"
 codesign --force --options runtime --timestamp --sign "$identity" "$app/Contents/Resources/Engine/audiocpp_cli"
-codesign --force --options runtime --timestamp --sign "$identity" "$app"
+codesign --force --options runtime --timestamp --sign "$identity" "$app/Contents/Resources/Engine/raven-denoise"
+codesign --force --options runtime --timestamp --entitlements "$repo/Resources/RavenVO.entitlements" --sign "$identity" "$app"
 codesign --verify --deep --strict --verbose "$app"
-zip="$output/Raven-VO-0.3.0-macOS-arm64.zip"
+zip="$output/Raven-VO-0.4.0-macOS-arm64.zip"
 ditto -c -k --keepParent "$app" "$zip"
 xcrun notarytool submit "$zip" --keychain-profile "$profile" --wait
 xcrun stapler staple "$app"

@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @Bindable var model: StudioModel
     @State private var showDetails = false
+    @State private var takePendingDeletion: Take?
     var body: some View {
         NavigationSplitView {
             VStack(alignment: .leading, spacing: 0) {
@@ -25,9 +26,19 @@ struct ContentView: View {
                                 Text(take.created, format: .dateTime.month(.abbreviated).day().hour().minute())
                                     .font(.caption).foregroundStyle(model.selectedID == take.id ? Color.primary : RavenBrand.secondaryText)
                             }.padding(.vertical, 5).accessibilityElement(children: .combine).tag(take.id)
+                            .contextMenu {
+                                Button("Delete take…", role: .destructive) { takePendingDeletion = take }
+                                    .disabled(model.isGenerating || model.isDeleting)
+                            }
                         }
                     }.listStyle(.sidebar)
+                        .onDeleteCommand { if model.canDeleteSelected { takePendingDeletion = model.selected } }
                 }
+                Button("Delete take…", systemImage: "trash", role: .destructive) { takePendingDeletion = model.selected }
+                    .buttonStyle(.bordered).disabled(!model.canDeleteSelected)
+                    .accessibilityLabel("Delete selected take")
+                    .help("Move the selected recording and its saved settings to the Trash")
+                    .padding(.horizontal).padding(.top, 8)
                 Button { NSWorkspace.shared.open(model.samples) } label: {
                     Label("Open recordings folder", systemImage: "folder")
                 }.buttonStyle(.borderless).padding().disabled(!model.available)
@@ -41,7 +52,7 @@ struct ContentView: View {
                 HStack(alignment: .top, spacing: 24) {
                     VoiceSettings(model: model).frame(width: 235)
                     ScriptEditor(model: model)
-                }.frame(height: 380)
+                }.frame(height: 600)
                 GenerationBar(model: model)
                 if let error = model.errorMessage {
                     HStack(alignment: .top) {
@@ -65,6 +76,11 @@ struct ContentView: View {
             .frame(minWidth: 690, maxWidth: .infinity, alignment: .topLeading)
             }
             .navigationTitle("Raven VO")
+        }
+        .confirmationDialog("Move this take to the Trash?", isPresented: Binding(get: { takePendingDeletion != nil }, set: { if !$0 { takePendingDeletion = nil } }), presenting: takePendingDeletion) { take in
+            Button("Move to Trash", role: .destructive) { model.deleteTake(take) }
+        } message: { take in
+            Text("“\(take.title)” and its saved voice settings can be recovered from the Trash. Your current script will stay in the editor.")
         }
         .navigationSplitViewStyle(.balanced)
         .frame(minWidth: 990, minHeight: 690)
@@ -106,44 +122,103 @@ private struct VoiceSettings: View {
     @State private var voiceSearch = ""
     var body: some View {
         ScrollView {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Language").font(.headline)
-            Picker("Language", selection: $model.selectedLanguage) {
-                ForEach(SpeechLanguage.all) { language in Text(language.name).tag(language.id) }
-            }.labelsHidden()
-            Text("Voice").font(.headline)
-            if model.selectedLanguage == "zh" {
-                TextField("Find a Chinese voice…", text: $voiceSearch).textFieldStyle(.roundedBorder)
-                    .accessibilityLabel("Find a Chinese voice")
-            }
-            Picker("Voice", selection: $model.draft.voice) {
-                ForEach(Voice.choices(for: model.selectedLanguage).filter { model.selectedLanguage != "zh" || voiceSearch.isEmpty || $0.id == model.draft.voice || $0.name.localizedCaseInsensitiveContains(voiceSearch) || $0.detail.localizedCaseInsensitiveContains(voiceSearch) }) { voice in Text(voice.name).tag(voice.id) }
-            }.labelsHidden()
-            Text(Voice.all.first(where: { $0.id == model.draft.voice })?.detail ?? "Choose a voice")
-                .lineLimit(4)
-                .font(.caption).foregroundStyle(RavenBrand.secondaryText)
-            if model.draft.voice == "designed" {
-                Text("Describe the delivery").font(.subheadline.bold())
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Language").font(.headline)
+                Picker("Language", selection: $model.selectedLanguage) {
+                    ForEach(SpeechLanguage.all) { language in Text(language.name).tag(language.id) }
+                }.labelsHidden().disabled(model.yourVoice.isRecording || model.yourVoice.busy)
+                Text("Preset voice").font(.headline)
+                if model.selectedLanguage == "zh" {
+                    TextField("Find a Chinese voice…", text: $voiceSearch).textFieldStyle(.roundedBorder)
+                        .accessibilityLabel("Find a Chinese voice").disabled(model.usesCustomVoice || model.usesYourVoice)
+                }
+                Picker("Preset voice", selection: $model.selectedPresetVoice) {
+                    ForEach(Voice.presets(for: model.selectedLanguage).filter { model.selectedLanguage != "zh" || voiceSearch.isEmpty || $0.id == model.selectedPresetVoice || $0.name.localizedCaseInsensitiveContains(voiceSearch) || $0.detail.localizedCaseInsensitiveContains(voiceSearch) }) { voice in Text(voice.name).tag(voice.id) }
+                }.labelsHidden().disabled(model.usesCustomVoice || model.usesYourVoice)
+                Text(Voice.all.first(where: { $0.id == model.selectedPresetVoice })?.detail ?? "Automatic voice for this language")
+                    .lineLimit(2).font(.caption).foregroundStyle(RavenBrand.secondaryText)
+                Divider()
+                Text("Custom Voice").font(.headline)
+                Toggle("Use custom voice", isOn: $model.usesCustomVoice)
+                    .disabled(model.yourVoice.busy || model.yourVoice.isRecording)
+                    .accessibilityHint("Uses the description below instead of the preset voice.")
+                if model.usesCustomVoice {
+                Text("Voice description").font(.subheadline)
                 TextEditor(text: $model.draft.style)
                     .font(.body).scrollContentBackground(.hidden).padding(6)
-                    .frame(height: 145).background(.background, in: .rect(cornerRadius: 8))
+                    .frame(height: 130).background(.background, in: .rect(cornerRadius: 8))
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(.separator))
-                    .accessibilityLabel("Voice description")
-                Text("Describe age, tone, accent, and pace. Each take may vary.")
+                    .accessibilityLabel("Custom voice description").disabled(!model.usesCustomVoice)
+                Text("Describe the voice’s age, accent, tone, and pace. Put the words to speak in Script.")
                     .font(.caption).foregroundStyle(RavenBrand.secondaryText)
-            } else {
-                Label(model.draft.voice == "natural" ? "Automatic voice" : "Named preset voice", systemImage: "person.wave.2")
+                }
+                Divider()
+                YourVoiceSettings(model: model)
+                Text("Write your script in the selected language. Text is spoken as written, without translation.")
                     .font(.caption).foregroundStyle(RavenBrand.secondaryText)
-                Text("For a particular mood or delivery, choose Voice Design.")
-                    .font(.caption).foregroundStyle(RavenBrand.secondaryText)
-            }
-            Text("Write your script in the selected language. Text is spoken as written, without translation.").font(.caption).foregroundStyle(RavenBrand.secondaryText)
-            Divider()
-            Text("\(SpeechLanguage.all.first { $0.id == model.selectedLanguage }?.name ?? "English") · WAV audio").font(.caption.bold())
-            Text("Saved to your chosen folder. Longer scripts are split into chunks automatically.")
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }.disabled(model.isGenerating || model.isDeleting)
+    }
+}
+private struct YourVoiceSettings: View {
+    @Bindable var model: StudioModel
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Your Voice").font(.headline)
+            Toggle("Use your voice", isOn: $model.usesYourVoice)
+                .disabled(model.yourVoice.busy || model.yourVoice.isRecording)
+            Text("Ming matches your voice from a short recording—no training step needed.")
                 .font(.caption).foregroundStyle(RavenBrand.secondaryText)
-        }.frame(maxWidth: .infinity, alignment: .leading)
-        }.disabled(model.isGenerating)
+            if model.usesYourVoice {
+                if !model.yourVoice.isRecording {
+                    Button("1. Check microphone") { model.stopPlayback(); model.yourVoice.startRecording(micCheck: true) }
+                        .disabled(model.yourVoice.busy)
+                }
+                Text("For the mic check, stay quiet for two seconds, then speak naturally for the rest of the recording.")
+                    .font(.caption).foregroundStyle(RavenBrand.secondaryText)
+                if let check = model.yourVoice.micCheck, let quality = check.quality {
+                    Text("Noise estimate: \(Int(quality.noiseDBFS)) dBFS · Peak: \(Int(quality.peakDBFS)) dBFS").font(.caption)
+                    Text(quality.guidance).font(.caption).foregroundStyle(RavenBrand.secondaryText)
+                    HStack {
+                        Button("Original test") { model.yourVoice.playMicCheck(cleaned: false) }
+                        Button("Cleaned test") { model.yourVoice.playMicCheck(cleaned: true) }
+                    }.disabled(model.yourVoice.busy || model.yourVoice.isRecording)
+                }
+                Toggle("Clean up new samples", isOn: Binding(get: { model.yourVoice.denoiseEnabled }, set: { model.yourVoice.denoiseEnabled = $0 }))
+                    .disabled(model.yourVoice.busy || model.yourVoice.isRecording)
+                Text("Noise reduction is applied to the saved sample before cloning. Your raw recording is kept.")
+                    .font(.caption).foregroundStyle(RavenBrand.secondaryText)
+                HStack {
+                    if model.yourVoice.isRecording {
+                        Button("Stop recording") { model.yourVoice.stopRecording() }
+                    } else {
+                        Button("2. Record sample") { model.stopPlayback(); model.yourVoice.startRecording() }.disabled(model.yourVoice.busy)
+                    }
+                    Button("Import…") { model.yourVoice.importSample() }.disabled(model.yourVoice.busy || model.yourVoice.isRecording)
+                }
+                if model.yourVoice.isRecording {
+                    Label("Recording · \(Int(model.yourVoice.elapsed))s / 12s", systemImage: "mic.fill").font(.caption)
+                    if model.yourVoice.recordingIsMicCheck && model.yourVoice.elapsed < 2 { Text("Stay quiet for the room-tone check.").font(.caption) }
+                    else { Text("Speak naturally now.").font(.caption) }
+                }
+                if model.yourVoice.busy { ProgressView("Preparing voice sample…").controlSize(.small) }
+                Text("Use 3–15 seconds of clean speech. Aim for about 8–10 seconds for your final voice sample.")
+                    .font(.caption).foregroundStyle(RavenBrand.secondaryText)
+                if model.yourVoice.ready, let profile = model.yourVoice.profile {
+                    Label("\(profile.cleanupApplied == true ? "Cleaned sample" : "Sample") ready · \(String(format: "%.1f", profile.duration)) seconds", systemImage: "checkmark.circle").font(.caption)
+                    if let quality = profile.quality { Text(quality.guidance).font(.caption).foregroundStyle(RavenBrand.secondaryText) }
+                    HStack {
+                        Button("Listen to sample") { model.yourVoice.playSample() }
+                        if profile.cleanupApplied == true { Button("Original") { model.yourVoice.playOriginalSample() } }
+                    }.disabled(model.yourVoice.isRecording || model.yourVoice.busy)
+                    TextField("Exact words in the sample (optional)", text: Binding(get: { model.yourVoice.transcript }, set: { model.yourVoice.transcript = $0 }), axis: .vertical)
+                        .textFieldStyle(.roundedBorder).lineLimit(2...4).accessibilityLabel("Voice sample transcript, optional")
+                        .disabled(model.yourVoice.isRecording || model.yourVoice.busy)
+                    Text("This transcript describes the sample. Put the new narration in Script.").font(.caption).foregroundStyle(RavenBrand.secondaryText)
+                }
+                if let error = model.yourVoice.error { Label(error, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.primary) }
+            }
+        }
     }
 }
 private struct ScriptEditor: View {
@@ -190,7 +265,7 @@ private struct GenerationBar: View {
                 Spacer()
                 Button("Cancel") { model.cancel() }.accessibilityIdentifier("cancel-generation")
             } else {
-                Text(model.canGenerate ? model.status : "Enter script text to enable generation. Voice Design also needs a voice description.")
+                Text(model.generationGuidance)
                     .font(.callout).foregroundStyle(RavenBrand.secondaryText)
                 Spacer()
                 Button { model.generate() } label: {
@@ -218,7 +293,7 @@ private struct PlaybackView: View {
                 Button { model.playPause() } label: { Image(systemName: model.isPlaying ? "pause.circle.fill" : "play.circle.fill").font(.system(size: 32)) }
                     .buttonStyle(.bordered).foregroundStyle(.primary)
                     .accessibilityLabel(model.isPlaying ? "Pause take" : "Play take")
-                    .disabled(model.duration == 0)
+                    .disabled(model.duration == 0 || model.yourVoice.isRecording)
                 Text(clock(model.position)).monospacedDigit().font(.caption).frame(width: 38)
                 Slider(value: Binding(get: { model.position }, set: { model.seek($0) }), in: 0...max(model.duration, 0.01))
                     .accessibilityLabel("Playback position")
@@ -240,7 +315,7 @@ private struct StorageSetupView: View {
                     .font(.subheadline.bold())
                 Spacer()
                 Button(model.storageChosen ? "Change folder…" : "Choose storage folder…") { model.chooseStorage() }
-                    .disabled(model.isGenerating || model.installer.busy)
+                    .disabled(model.isGenerating || model.isDeleting || model.yourVoice.busy || model.yourVoice.isRecording || model.installer.busy)
             }
             Text(model.storageLabel).font(.caption).foregroundStyle(RavenBrand.secondaryText).textSelection(.enabled).lineLimit(2)
             if model.installer.busy {

@@ -15,3 +15,5 @@ Sources:
 - https://github.com/inclusionAI/Ming-3.0-tts/blob/main/LICENSE
 - https://huggingface.co/audio-cpp/Ming-3.0-TTS-0.5B-GGUF/blob/2eb8d37c7f10672e69c8aa33091baa04c461b66c/README.md
 - https://github.com/0xShug0/audio.cpp/blob/bdf78b9140d091949b20311bcf7ecad3698e53fe/LICENSE
+
+October 27, 2026, 0.4 update: RNNoise is bundled for sample cleanup. Xiph's BSD-3-Clause COPYING and AUTHORS are included; its pinned, checksum-verified default network is compiled into the helper. The app's reference-recording feature is intended for users' own voice samples and retains the original recording. No claim of rights to third-party voices or character identities is made.
