@@ -1,4 +1,4 @@
-Raven VO is a local voice-over studio, currently powered by Ming 0.5B. This is the first Windows preview in the RavenMix and RavenAudio family. Website: https://www.ravenvo.app.
+Raven VO is a local voice-over studio, currently powered by Ming 0.5B. This is the first public Windows testing prerelease in the RavenMix and RavenAudio family. Website: https://www.ravenvo.app.
 
 **Target:** Windows 11 x64 on Intel/AMD PCs with AVX2, using CPU generation. No GPU or separate Python installation is required for the packaged application.
 
@@ -14,4 +14,4 @@ Download the `-setup.exe` for installation, or extract the `-portable.zip` and r
 
 Validation covers the shared core and Qt UI checks, native Windows CPU speech generation and cleanup, portable startup and a silent per-user installer test on the hosted Windows runner. Physical Windows 11 microphone and speaker routing still need testing on the intended machine. CPU performance varies by hardware; no accessibility certification is claimed.
 
-The package includes editable frontend source and model, engine, cleanup, Qt/PySide, Python and Microsoft runtime notices. Qt remains dynamically linked and replaceable. This release stays in draft for hardware acceptance and publisher-signing review.
+The package includes editable frontend source and model, engine, cleanup, Qt/PySide, Python and Microsoft runtime notices. Qt remains dynamically linked and replaceable. This is a public testing prerelease. Physical hardware acceptance and Authenticode publisher signing remain pending.

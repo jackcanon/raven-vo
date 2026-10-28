@@ -6,7 +6,7 @@ The preview produces a per-user setup installer and a portable ZIP. Choose a sto
 
 The language picker, presets, Custom Voice, Your Voice recording/import, microphone selection, saved-sample RNNoise cleanup and waveform transport share the Linux implementation. Voice reference matching is not a separate model-training job.
 
-Windows previews are **unsigned** unless an Authenticode identity is explicitly configured. A macOS Developer ID cannot sign Windows installers. Windows may show an unknown-publisher/SmartScreen prompt. Keep previews in draft until physical microphone/playback acceptance and publisher-signing decisions are complete.
+Windows previews are **unsigned** unless an Authenticode identity is explicitly configured. A macOS Developer ID cannot sign Windows installers. Windows may show an unknown-publisher/SmartScreen prompt. Public testing prereleases are available for hardware acceptance. Complete physical microphone/playback checks and publisher-signing decisions before treating a build as production-ready.
 
 ## Development
 

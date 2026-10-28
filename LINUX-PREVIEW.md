@@ -1,4 +1,4 @@
-Raven VO is a local voice-over studio, currently powered by Ming 0.5B. This is the first Linux preview, complementing the RavenMix and RavenAudio family. Website: https://www.ravenvo.app.
+Raven VO is a local voice-over studio, currently powered by Ming 0.5B. This is the first public Linux testing prerelease, complementing the RavenMix and RavenAudio family. Website: https://www.ravenvo.app.
 
 **Target:** Ubuntu 24.04 or later and Debian 13 or later, on Intel/AMD x86-64 PCs with AVX2. This preview uses CPU generation; no GPU is required. It is an early compatibility release for testing on your hardware.
 
