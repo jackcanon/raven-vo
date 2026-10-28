@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import ssl
 import threading
 import time
 import urllib.request
@@ -118,7 +119,11 @@ def download_model(destination: Path, progress=lambda *_: None, cancel=None, *, 
         headers = {"Accept-Encoding": "identity", "User-Agent": "RavenVO-Linux/0.5-preview"}
         if offset:
             headers["Range"] = f"bytes={offset}-"
-        with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=30) as response:
+        # A frozen Python must use the target distribution's trust store, not
+        # an absolute certificate path from the CI machine's Python build.
+        system_ca = Path("/etc/ssl/certs/ca-certificates.crt")
+        context = ssl.create_default_context(cafile=str(system_ca) if system_ca.is_file() else None)
+        with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=30, context=context) as response:
             if response.status == 206:
                 match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", response.headers.get("Content-Range", ""))
                 if not match or int(match[1]) != offset or int(match[3]) != size:
