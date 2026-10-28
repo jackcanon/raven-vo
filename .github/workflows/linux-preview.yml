@@ -31,10 +31,21 @@ jobs:
         run: |
           python -m unittest discover -s Linux/tests -p 'test_*.py' -v
           python Linux/tests/smoke_ui.py
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .build/linux-audio.cpp
+            .build/linux-rnnoise
+            .build/linux-raven-denoise
+          key: raven-linux-native-gcc13-bdf78b9-70f1d25-v1
       - name: Build pinned native CPU engine and RNNoise
         run: |
           Linux/scripts/build-engine.sh
           Linux/scripts/build-denoiser.sh
+      - name: Native cleanup acceptance
+        env:
+          RAVEN_TEST_DENOISER: ${{ github.workspace }}/.build/linux-raven-denoise
+        run: python -m unittest discover -s Linux/tests -p 'test_*.py' -v
       - name: Actual local-model CPU generation
         env:
           RAVEN_VO_ENGINE: ${{ github.workspace }}/.build/linux-audio.cpp/build/raven-linux/bin/audiocpp_cli

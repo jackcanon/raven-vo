@@ -76,6 +76,24 @@ class CoreChecks(unittest.TestCase):
         self.assertEqual(captured, ["one.json", "one.wav"])
         self.assertFalse(audio.exists())
 
+    def test_cleanup_helper_and_raw_preservation(self):
+        helper = os.environ.get("RAVEN_TEST_DENOISER")
+        if not helper:
+            self.skipTest("Set RAVEN_TEST_DENOISER to validate the native cleanup helper")
+        rate = 48000
+        source = self.root / "noisy.wav"
+        generator = np.random.default_rng(42)
+        samples = generator.normal(0, 0.025, rate * 4).astype(np.float32)
+        sf.write(source, samples, rate)
+        profile = prepare_sample(source, self.root / "voice-references", Path(helper), cleanup=True)
+        self.assertTrue(profile["cleanupApplied"])
+        output = self.root / "voice-references" / profile["fileName"]
+        cleaned, output_rate = sf.read(output)
+        self.assertEqual(output_rate, 24000)
+        self.assertLess(abs(len(cleaned) / output_rate - 4), 0.02)
+        self.assertLess(float(np.sqrt(np.mean(cleaned ** 2))), 0.015)
+        self.assertTrue((self.root / "voice-references" / profile["rawFileName"]).exists())
+
     def test_audio_prepare_waveform_and_silence(self):
         rate = 24000
         source = self.root / "input.wav"

@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 from PySide6.QtCore import QProcess, QProcessEnvironment, QTimer, QUrl, Qt, Signal
-from PySide6.QtGui import QColor, QDesktopServices, QIcon, QPainter, QPen
+from PySide6.QtGui import QColor, QDesktopServices, QIcon, QPainter, QPalette, QPen
 from PySide6.QtMultimedia import QAudio, QAudioFormat, QAudioOutput, QAudioSource, QMediaDevices, QMediaPlayer
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFileDialog, QFormLayout, QGroupBox,
     QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMessageBox,
@@ -453,6 +453,11 @@ class Window(QMainWindow):
             return (read_json(store.path("app-data/linux-draft.json"), {}), read_json(store.path("app-data/linux-your-voice.json")), read_json(store.path("app-data/linux-mic-check.json")))
         def done(values):
             self.player.stop()
+            self.player.setSource(QUrl())
+            self.player_path = None
+            self.wave_request += 1
+            self.waveform.peaks = []
+            self.waveform.update()
             self.store = store
             self.profile, self.mic_check = values[1:]
             self.config.update(storage=str(store.root), identity=store.identity)
@@ -769,7 +774,7 @@ class Window(QMainWindow):
             self.meter.setValue(int(max(0, min(100, (db + 60) / 60 * 100))))
             self.meter_note.setText(f"{db:.0f} dBFS · " + ("Input detected" if db > -55 else "No clear signal; check input and gain"))
         if self.capture_size > 64 * 1024 * 1024:
-            self.stop_capture()
+            QTimer.singleShot(0, self.stop_capture)
 
     @staticmethod
     def decode_pcm(data, channels, dtype):
@@ -884,6 +889,17 @@ def main():
     app.setApplicationName("Raven VO")
     app.setOrganizationName("Happy Jack Media")
     app.setStyle("Fusion")
+    palette = QPalette()
+    for role, value in [(QPalette.Window, "#242424"), (QPalette.WindowText, "#f3f3f3"),
+                        (QPalette.Base, "#191919"), (QPalette.AlternateBase, "#333333"),
+                        (QPalette.Text, "#f3f3f3"), (QPalette.Button, "#414141"),
+                        (QPalette.ButtonText, "#ffffff"), (QPalette.Light, "#b8b8b8"),
+                        (QPalette.Mid, "#747474"), (QPalette.Dark, "#929292"),
+                        (QPalette.Highlight, "#555555"), (QPalette.HighlightedText, "#ffffff")]:
+        palette.setColor(role, QColor(value))
+    palette.setColor(QPalette.Disabled, QPalette.Text, QColor("#b8b8b8"))
+    palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor("#b8b8b8"))
+    app.setPalette(palette)
     app.setStyleSheet("""
         QWidget { background: #242424; color: #f3f3f3; font-size: 13px; }
         QLineEdit, QPlainTextEdit, QListWidget, QComboBox { background: #191919; border: 1px solid #747474; border-radius: 5px; padding: 6px; }
@@ -893,6 +909,7 @@ def main():
         QPushButton#primary { background: #f2ad32; color: #111111; }
         QWidget:disabled { color: #b8b8b8; }
         QPushButton:disabled { background: #333333; border-color: #555555; }
+        QPushButton#primary:disabled { background: #333333; color: #b8b8b8; }
         QGroupBox { border: 1px solid #6c6c6c; border-radius: 5px; margin-top: 14px; padding-top: 12px; }
         QGroupBox::title { subcontrol-origin: margin; left: 8px; }
         QProgressBar { border: 1px solid #777777; min-height: 9px; text-align: center; }
@@ -901,6 +918,10 @@ def main():
     """)
     window = Window()
     window.show()
+    if "--screenshot" in sys.argv:
+        index = sys.argv.index("--screenshot")
+        if index + 1 < len(sys.argv):
+            QTimer.singleShot(800, lambda: window.grab().save(sys.argv[index + 1]))
     if "--smoke-test" in sys.argv:
         QTimer.singleShot(1500, window.close)
     return app.exec()
