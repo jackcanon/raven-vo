@@ -270,7 +270,8 @@ struct Take: Identifiable, Hashable {
             if snapshot.voice == "designed" { args += ["--request-option", "instruct=\(snapshot.style)"] }
             else if snapshot.voice == "reference" {
                 guard let reference = yourVoice.sampleURL else { throw StudioError.message("Record or import your voice sample first.") }
-                args += ["--voice-ref", reference.path]
+                let chunkSize = ["zh", "ja", "ko"].contains(snapshot.language ?? "en") ? "40" : "100"
+                args += ["--voice-ref", reference.path, "--request-option", "text_chunk_size=\(chunkSize)"]
                 if let transcript = snapshot.referenceTranscript?.trimmingCharacters(in: .whitespacesAndNewlines), !transcript.isEmpty { args += ["--request-option", "reference_text=\(transcript)"] }
             }
             else if snapshot.voice == "natural" { args += ["--request-option", "template_name=multilingual"] }
