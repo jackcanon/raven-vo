@@ -68,6 +68,13 @@ jobs:
           unset PYTHONPATH
           QT_QPA_PLATFORM=offscreen timeout 30s "$GITHUB_WORKSPACE/dist/linux/RavenVO/RavenVO" --smoke-test > "$GITHUB_WORKSPACE/.build/frozen-smoke.log" 2>&1
           QT_QPA_PLATFORM=xcb xvfb-run -a timeout 30s "$GITHUB_WORKSPACE/dist/linux/RavenVO/RavenVO" --smoke-test >> "$GITHUB_WORKSPACE/.build/frozen-smoke.log" 2>&1
+      - name: Install and launch the actual deb on Debian 13
+        run: |
+          docker run --rm -e DEBIAN_FRONTEND=noninteractive -v "$GITHUB_WORKSPACE/dist/linux:/packages:ro" debian:13-slim bash -euxc '
+            apt-get update
+            apt-get install -y /packages/*-amd64.deb xvfb xauth
+            QT_QPA_PLATFORM=xcb xvfb-run -a timeout 30s /opt/raven-vo/RavenVO --smoke-test
+          ' > .build/debian-smoke.log 2>&1
       - uses: actions/upload-artifact@v4
         if: success()
         with:
@@ -85,3 +92,4 @@ jobs:
             .build/linux-inference/native-engine.log
             .build/linux-inference/samples/linux-real-inference.wav
             .build/frozen-smoke.log
+            .build/debian-smoke.log
