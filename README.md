@@ -9,8 +9,8 @@ Raven VO is a local voice-over studio, currently powered by Ming 0.5B. Write a s
 | Platform | Status | Details |
 | --- | --- | --- |
 | Apple Silicon macOS | Stable 0.4.0 | [Download](https://github.com/jackcanon/raven-vo/releases/tag/v0.4.0) |
-| Ubuntu 24.04 / Debian 13, x86-64 CPU | Preview; native generation and packaged startup tested | [Download preview](https://github.com/jackcanon/raven-vo/releases/tag/v0.5.0-linux-preview.1) · [Guide](Linux/README.md) |
-| Windows 11 x64 CPU | Preview; native generation, portable app and installer tested on the hosted Windows runner | [Download preview](https://github.com/jackcanon/raven-vo/releases/tag/v0.5.0-windows-preview.1) · [Guide](Windows/README.md) |
+| Ubuntu 24.04 / Debian 13, x86-64 CPU | Preview; native generation and packaged startup tested | [Download preview](https://github.com/jackcanon/raven-vo/releases/tag/v0.5.0-linux-preview.2) · [Guide](Linux/README.md) |
+| Windows 11 x64 CPU | Preview; native generation, portable app and installer tested on the hosted Windows runner | [Download preview](https://github.com/jackcanon/raven-vo/releases/tag/v0.5.0-windows-preview.2) · [Guide](Windows/README.md) |
 
 Linux and Windows previews are public testing prereleases; physical microphone/playback acceptance remains pending. Windows previews are unsigned. Source builds and CI validation are available in this repository.
 
@@ -114,3 +114,5 @@ RNNoise source: Xiph.Org, BSD-3-Clause, pinned at `70f1d256acd4b34a572f999a05c87
 Microphone input can be selected in **Your Voice**. The choice is remembered; **System default** displays the current input name. Use **Refresh microphones** after connecting hardware. The level meter runs during a user-started recording; opening Your Voice does not start capture.
 
 The playback bar stays visible below the editor. Select a take or audition an original/cleaned voice sample to load its waveform. Click or drag the waveform to seek, use the accessible position slider, skip five seconds, adjust volume, or pause and resume. Sample auditions and takes share the controls and do not play over one another.
+
+Linux and Windows preview 2 adds a one-time welcome guide, persistent storage/download controls, setup availability explanations and retry guidance. Generate and status remain above the waveform player while settings scroll. Interface checks cover windows down to 800×600; Linux checks also run at 150% scaling. Existing selected storage, drafts and takes are retained.
