@@ -6,7 +6,7 @@ engine="${ENGINE_BINARY:-$repo/.build/audio.cpp/build/macos-portable-release/bin
 engine_source="${ENGINE_SOURCE:-$repo/.build/audio.cpp}"
 if [[ ! -x "$engine" ]]; then echo 'Build the engine first with scripts/build-engine.sh.' >&2; exit 1; fi
 if [[ ! -x "$repo/.build/raven-denoise" ]]; then "$repo/scripts/build-denoiser.sh"; fi
-app="$output/Raven VO.app"
+app="$output/Raven VO Studio Preview.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/Engine" "$repo/.build/tmp" "$repo/.build/swift-cache"
 export TMPDIR="$repo/.build/tmp"
 export CLANG_MODULE_CACHE_PATH="$repo/.build/swift-cache"
@@ -24,7 +24,7 @@ python3 - "$app" "$engine_source" <<'PY'
 import plistlib,sys,shutil
 from pathlib import Path
 app,engine=map(Path,sys.argv[1:])
-(app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIconFile':'AppIcon','CFBundleExecutable':'RavenVO','CFBundleIdentifier':'app.happyjack.mingvoiceovers','CFBundleName':'Raven VO','CFBundleDisplayName':'Raven VO','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.4.0','CFBundleVersion':'7','LSMinimumSystemVersion':'14.0','NSMicrophoneUsageDescription':'Record a short sample of your voice for local voice-over generation. Recordings stay in your selected storage folder.','NSHighResolutionCapable':True,'NSPrincipalClass':'NSApplication'}))
+(app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIconFile':'AppIcon','CFBundleExecutable':'RavenVO','CFBundleIdentifier':'app.happyjack.ravenvo.studio-preview','CFBundleName':'Raven VO Studio Preview','CFBundleDisplayName':'Raven VO Studio Development Preview','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.5.0','CFBundleVersion':'8','LSMinimumSystemVersion':'14.0','NSSpeechRecognitionUsageDescription':'Transcribe your voice-over recordings for text-based audio editing.','NSMicrophoneUsageDescription':'Record voice-over narration and voice samples. Recordings stay in your selected storage folder.','NSHighResolutionCapable':True,'NSPrincipalClass':'NSApplication'}))
 root=app/'Contents/Resources/ThirdParty'
 for directory in [engine,engine/'external']:
     for path in (directory.glob('*') if directory==engine else directory.rglob('*')):

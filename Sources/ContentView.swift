@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.openWindow) private var openWindow
     @Bindable var model: StudioModel
     @State private var showDetails = false
     @State private var takePendingDeletion: Take?
@@ -39,6 +40,7 @@ struct ContentView: View {
                     .accessibilityLabel("Delete selected take")
                     .help("Move the selected recording and its saved settings to the Trash")
                     .padding(.horizontal).padding(.top, 8)
+                Button("Voice-over Studio…", systemImage: "waveform.badge.mic") { openWindow(id: "narration") }.padding(.horizontal).padding(.top, 12)
                 Button { NSWorkspace.shared.open(model.samples) } label: {
                     Label("Open recordings folder", systemImage: "folder")
                 }.buttonStyle(.borderless).padding().disabled(!model.available)

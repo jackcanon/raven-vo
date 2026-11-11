@@ -34,3 +34,19 @@ xcrun swiftc -parse-as-library -swift-version 6 -O "$repo/Sources/AudioWaveform.
 
 xcrun swiftc -parse-as-library -swift-version 6 -O "$repo/Sources/VoiceSampleCleanup.swift" "$repo/Sources/MicrophoneCapture.swift" "$repo/Sources/YourVoice.swift" "$repo/Sources/AccessibilityAnnouncement.swift" "$repo/Sources/TakeDeletion.swift" "$repo/Sources/AudioWaveform.swift" "$repo/Sources/SettingsWriter.swift" "$repo/Sources/StudioModel.swift" "$repo/Sources/Storage.swift" "$repo/Sources/ModelInstaller.swift" "$repo/Sources/ChineseVoices.swift" "$repo/Sources/SpeechLanguage.swift" "$repo/Tests/PlaybackChecks.swift" -o "$repo/.build/playback-checks"
 "$repo/.build/playback-checks" "$repo/.build/playback-tests"
+
+# Native narration editing and export checks (no microphone or speech assets needed).
+xcrun swiftc -parse-as-library -swift-version 6 -O "$repo/Sources/NarrationPluginState.swift" "$repo/Sources/NarrationCleanupSettings.swift" "$repo/Sources/NarrationEdit.swift" "$repo/Tests/NarrationChecks.swift" -o "$repo/.build/narration-checks"
+"$repo/.build/narration-checks" "$repo/.build/narration-fixtures"
+
+xcrun swiftc -parse-as-library -swift-version 6 -O -target arm64-apple-macosx14.0 "$repo/Sources/NarrationPluginState.swift" "$repo/Sources/NarrationAudioUnits.swift" "$repo/Sources/NarrationCleanupSettings.swift" "$repo/Sources/NarrationNoiseCleanup.swift" "$repo/Tests/StudioProcessingChecks.swift" -o "$repo/.build/studio-processing-checks"
+"$repo/.build/studio-processing-checks" "$repo/.build/processing-fixtures"
+
+xcrun swiftc -parse-as-library -swift-version 6 -O -target arm64-apple-macosx14.0 "$repo/Sources/MicrophoneCapture.swift" "$repo/Tests/CapturePCMChecks.swift" -o "$repo/.build/capture-pcm-checks"
+"$repo/.build/capture-pcm-checks"
+
+# Interrupted-recording journal and bounded ten-minute edit/render checks.
+"$repo/scripts/test-recording-recovery.sh"
+
+# Final export encoding, gain and level checks.
+"$repo/scripts/test-export.sh"

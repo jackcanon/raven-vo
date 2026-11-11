@@ -16,6 +16,17 @@ import AVFoundation
         let values = try await Task.detached { try AudioWaveform.peaks(from: url, bins: 48) }.value
         precondition(values.count == 48 && abs(values[1] - 0.25) < 0.001 && abs(values[36] - 0.8) < 0.001)
         precondition(values.enumerated().filter { ![1,36].contains($0.offset) }.allSatisfy { $0.element == 0 })
+        let detail = try AudioWaveform.peaks(from: url, bins: 24, start: 1, end: 2)
+        precondition(detail.count == 24 && abs(detail[12] - 0.8) < 0.001)
+        precondition(detail.enumerated().filter { $0.offset != 12 }.allSatisfy { $0.element == 0 })
+        let excluded = try AudioWaveform.peaks(from: url, bins: 24, start: 0.5, end: 1)
+        precondition(excluded.allSatisfy { $0 == 0 })
+        let reversed = try AudioWaveform.peaks(from: url, start: 2, end: 1)
+        precondition(reversed.isEmpty)
+        let invalid = try AudioWaveform.peaks(from: url, start: .nan)
+        precondition(invalid.isEmpty)
+        let clipped = try AudioWaveform.peaks(from: url, bins: 48, start: -1, end: 20)
+        precondition(clipped == values)
         let empty = try AudioWaveform.peaks(from: url, bins: 0); precondition(empty.isEmpty)
         let model = WaveformModel()
         model.load(url); model.load(nil)
@@ -24,6 +35,10 @@ import AVFoundation
         model.load(url)
         for _ in 0..<100 { if !model.loading { break }; try await Task.sleep(for: .milliseconds(10)) }
         precondition(model.peaks.count == 640 && model.error == nil)
+        model.load(url, start: 0, end: 0.5, bins: 12)
+        model.load(url, start: 1, end: 2, bins: 24)
+        for _ in 0..<100 { if !model.loading { break }; try await Task.sleep(for: .milliseconds(10)) }
+        precondition(model.peaks.count == 24 && abs(model.peaks[12] - 0.8) < 0.001)
         model.load(root.appendingPathComponent("missing.wav"))
         for _ in 0..<100 { if !model.loading { break }; try await Task.sleep(for: .milliseconds(10)) }
         precondition(model.peaks.isEmpty && model.error != nil)
